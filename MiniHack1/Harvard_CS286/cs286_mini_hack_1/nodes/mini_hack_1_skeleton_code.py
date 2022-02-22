@@ -20,7 +20,17 @@
 
 # yyy
 '''
-    For part 1: python mini_hack_1_skeleton_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
+	For part 1: 
+	- roslaunch turtlebot3_bringup turtlebot3_robot.launch
+	- python mini_hack_1_skeleton_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
+	
+
+	For part 2: 
+	- tab1: roslaunch turtlebot3_bringup turtlebot3_robot.launch
+	- tab2: roslaunch realsense2_camera rs_t265.launch
+	- python mini_hack_1_skeleton_code.py --position_topic \camera\odom\sample --velocity_topic \cmd_vel --scan_topic \scan    
+
+
 '''
 # yyy
 
@@ -34,6 +44,7 @@ import time
 
 # yyy
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import LaserScan
 # yyy
 
 
@@ -91,7 +102,40 @@ class GotoPoint():
         '''
 	Use the code in *_obstacle.py to update the scan_filter value which is returned.
 	'''
-    	# xxx
+    	# yyy
+        print("ASFD")
+        scan = rospy.wait_for_message(self.scan_topic, LaserScan)
+       	print(scan)
+        scan_filter = []
+       
+        samples = len(scan.ranges)  # The number of samples is defined in 
+                                    # turtlebot3_<model>.gazebo.xacro file,
+                                    # the default is 360.
+        samples_view = 90            # 1 <= samples_view <= samples
+        
+        if samples_view > samples:
+            samples_view = samples
+
+        if samples_view is 1:
+            scan_filter.append(scan.ranges[0])
+
+        else:
+            left_lidar_samples_ranges = -(samples_view//2 + samples_view % 2)
+            right_lidar_samples_ranges = samples_view//2
+	    #left_lidar_samples_ranges = -90 #increasing the cone to stop with obstacles 
+            #right_lidar_samples_ranges = 90
+
+            left_lidar_samples = scan.ranges[left_lidar_samples_ranges:]
+            right_lidar_samples = scan.ranges[:right_lidar_samples_ranges]
+            scan_filter.extend(left_lidar_samples + right_lidar_samples)
+
+        for i in range(samples_view):
+            if scan_filter[i] == float('Inf') or scan_filter[i] == 0 or scan_filter[i] > LIMIT_RANGE :
+                scan_filter[i] = LIMIT_RANGE
+            elif math.isnan(scan_filter[i]):
+                scan_filter[i] = 0
+        
+        # yyy
 
         return scan_filter
 
@@ -135,17 +179,24 @@ class GotoPoint():
             Get the lidar distance using get_scan() function and calculate min distance
 	    update the _distance variable.
 	    '''
-            # xxx
-            # xxx
-            # if _distance < SAFE_STOP_DISTANCE and _distance > 0:
-                # move_cmd.linear.x = 0.0
-                # move_cmd.angular.z = 0.0
-                # rospy.loginfo('Obstacle detected!')
-            # else:
-                # '''
-                # Use the logic of the *_pointop_key.py code here to move the robot from one position to another
-		# '''
-        # yyy
+	    # yyy
+            scan_filter = self.get_scan()
+            print(scan_filter)
+ #           _distance = min(scan_filter)
+            # yyy
+
+      #      if _distance < SAFE_STOP_DISTANCE and _distance > 0:
+     #           move_cmd.linear.x = 0.0
+    #            move_cmd.angular.z = 0.0
+   #             print("Obstacle")
+  #              rospy.loginfo('Obstacle detected!')
+ #           else:
+#		print("a")
+    #            '''
+     #          	Use the logic of the *_pointop_key.py code here to move the robot from one position to another
+#		'''
+#
+            # yyy
             if path_angle < -pi/4 or path_angle > pi/4:
                 if goal_y < 0 and y_start < goal_y:
                     path_angle = -2*pi + path_angle
@@ -222,7 +273,7 @@ class GotoPoint():
         2. "Writing a subscriber" section in http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29"
         3. HW1 turtles_assemble.py	 
         '''  
-
+	#print(msg)
         # yyy      
         x, y = msg.pose.pose.position.x, msg.pose.pose.position.y
         rpy = euler_from_quaternion((msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
