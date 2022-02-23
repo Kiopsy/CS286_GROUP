@@ -19,17 +19,24 @@
 
 
 # yyy
+
+# Mini-Hack-1 Steps for Execution
 '''
 	For part 1: 
 	- roslaunch turtlebot3_bringup turtlebot3_robot.launch
 	- python mini_hack_1_skeleton_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
-	
 
 	For part 2: 
 	- tab1: roslaunch turtlebot3_bringup turtlebot3_robot.launch
 	- tab2: roslaunch realsense2_camera rs_t265.launch
 	- python mini_hack_1_skeleton_code.py --position_topic \camera\odom\sample --velocity_topic \cmd_vel --scan_topic \scan    
 
+    For part 3:
+
+    Rosbag Recording for each part:
+        1. rosbag record -O turtlesim_rosbag /odom /scan /tf
+        2. rosbag record -O turtlesim_rosbag /camera/sample/odom /scan /tf
+        3. rosbag record -O turtlesim_rosbag /odom /scan /tf
 
 '''
 # yyy
@@ -45,6 +52,7 @@ import time
 # yyy
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
+import matplotlib.pyplot as plt
 # yyy
 
 
@@ -94,6 +102,9 @@ class GotoPoint():
         self.curr_rotation = 0
         self.waypoints = [[2.1,0,0],[2.0,2.1,0],[0,2.1,0],[0,0,0]] #These are the rough dimensions of the testbed
         self.waypoint_counter = 0
+        
+        # Data to plot [[x], [y]]
+        self.plot_data = [[], []]
         #=====New=====
         
 	
@@ -219,6 +230,7 @@ class GotoPoint():
             last_rotation = rotation
             self.cmd_vel.publish(move_cmd)
             r.sleep()
+
         position, rotation = self.curr_position, self.curr_rotation
 
         while abs(rotation - goal_z) > 0.05:
@@ -245,14 +257,12 @@ class GotoPoint():
         self.cmd_vel.publish(Twist())
         # yyy
 
-
     def getkey(self):
         x, y, z = raw_input("| x | y | z |\n").split()
         if x == 's':
             self.shutdown()
         x, y, z = [float(x), float(y), float(z)]
         return x, y, z
-
 
     def getWaypoint(self):
         val = self.waypoints[self.waypoint_counter]
@@ -264,7 +274,6 @@ class GotoPoint():
         print(x, y, z)
         return x, y, z
 
-
     def get_position_cb(self, msg):
         '''
         Update the self.curr_position and self.curr_rotation in this callback function to the position_topic.
@@ -273,7 +282,6 @@ class GotoPoint():
         2. "Writing a subscriber" section in http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29"
         3. HW1 turtles_assemble.py	 
         '''  
-	#print(msg)
         # yyy      
         x, y = msg.pose.pose.position.x, msg.pose.pose.position.y
         rpy = euler_from_quaternion((msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
@@ -281,9 +289,21 @@ class GotoPoint():
         self.curr_position.x = x
         self.curr_position.y = y
         self.curr_rotation = rpy[2]
+       
+        # Adding plot data -- might have to put this somewehre else
+        self.plot_data[0].append(x)
+        self.plot_data[1].append(y)
         # yyy
-        
-
+    
+    # yyy
+    # Getting the plot
+    def get_plot(self):
+        fig = plt.figure()
+        plt.title("Turtlebot Position")
+        ax = plt.axes()
+        ax.plot(self.plot_data[0], self.plot_data[1])
+        plt.show()
+    # yyy
 
     def shutdown(self):
         self.cmd_vel.publish(Twist())
@@ -301,8 +321,8 @@ if __name__ == '__main__':
     try:
         obj = GotoPoint(args.position_topic, args.velocity_topic, args.scan_topic)
         while not rospy.is_shutdown():
-            #print(print_msg)
             obj.go_to_waypoint()
+            obj.get_plot()
     except Exception as e: 
         print(e)
         rospy.loginfo("shutdown program now.")
