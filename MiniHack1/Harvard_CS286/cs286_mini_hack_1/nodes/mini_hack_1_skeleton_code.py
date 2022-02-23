@@ -18,21 +18,28 @@
 # Authors: Gilbert #
 
 
-# yyy
+# yyy s
+
+# Mini-Hack-1 Steps for Execution
 '''
 	For part 1: 
-	- roslaunch turtlebot3_bringup turtlebot3_robot.launch
+	- (ssh) roslaunch turtlebot3_bringup turtlebot3_robot.launch
 	- python mini_hack_1_skeleton_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
-	
 
 	For part 2: 
-	- tab1: roslaunch turtlebot3_bringup turtlebot3_robot.launch
-	- tab2: roslaunch realsense2_camera rs_t265.launch
-	- python mini_hack_1_skeleton_code.py --position_topic \camera\odom\sample --velocity_topic \cmd_vel --scan_topic \scan    
+	- tab1: (ssh) roslaunch turtlebot3_bringup turtlebot3_robot.launch
+	- tab2: (ssh) roslaunch realsense2_camera rs_t265.launch
+	- tab3: python mini_hack_1_skeleton_code.py --position_topic /camera/odom/sample --velocity_topic \cmd_vel --scan_topic \scan
 
+    For part 3:
 
+    Rosbag Recording for each part:
+        1. rosbag record -O task1_rosbag /odom /scan /tf
+        2. rosbag record -O task2_rosbag /camera/odom/sample /scan /tf
+        3. rosbag record -O task3_rosbag /odom /scan /tf
+        
 '''
-# yyy
+# yyy e
 
 import rospy
 from geometry_msgs.msg import Twist, Point, Quaternion
@@ -42,10 +49,12 @@ from tf.transformations import euler_from_quaternion
 import numpy as np
 import time
 
-# yyy
+# yyy s
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-# yyy
+import matplotlib.pyplot as plt
+import math
+# yyy e
 
 
 
@@ -58,6 +67,14 @@ import argparse
 STOP_DISTANCE = 0.4
 LIDAR_ERROR = 0.05
 SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR
+
+# yyy s
+LINEAR_VEL = 0.22
+STOP_DISTANCE = 0.4
+LIDAR_ERROR = 0.05
+SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR
+LIMIT_RANGE=2
+# yyy e
 
 print_msg = """
 control your Turtlebot3 for Waypoint!
@@ -85,9 +102,11 @@ class GotoPoint():
         Create a subscriber for the position_topic make sure to use the correct message type.        
         Reference: "Writing a subscriber" section in http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29"
         '''
-        # yyy
+        # yyy s
         self.sub_pos = rospy.Subscriber(position_topic, Odometry, self.get_position_cb)
-        # yyy
+        # Data to plot [[x], [y]]
+        self.plot_data = [[], []]
+        # yyy e
             
         self.rot = Quaternion()
         self.curr_position = Point()
@@ -102,16 +121,16 @@ class GotoPoint():
         '''
 	Use the code in *_obstacle.py to update the scan_filter value which is returned.
 	'''
-    	# yyy
-        print("ASFD")
+    	# yyy s
+        # print("ASFD")
         scan = rospy.wait_for_message(self.scan_topic, LaserScan)
-       	print(scan)
+       	# print(scan)
         scan_filter = []
        
         samples = len(scan.ranges)  # The number of samples is defined in 
                                     # turtlebot3_<model>.gazebo.xacro file,
-                                    # the default is 360.
-        samples_view = 90            # 1 <= samples_view <= samples
+        # sensing radius            # the default is 360.
+        samples_view = 45            # 1 <= samples_view <= samples
         
         if samples_view > samples:
             samples_view = samples
@@ -135,7 +154,7 @@ class GotoPoint():
             elif math.isnan(scan_filter[i]):
                 scan_filter[i] = 0
         
-        # yyy
+        # yyy e
 
         return scan_filter
 
@@ -143,9 +162,9 @@ class GotoPoint():
     def go_to_waypoint(self):
         position = Point()
         move_cmd = Twist()
-        # yyy
+        # yyy s
         r = rospy.Rate(10)
-        # yyy
+        # yyy e
 
         print("Starting new waypoint")
         position = self.curr_position
@@ -179,24 +198,28 @@ class GotoPoint():
             Get the lidar distance using get_scan() function and calculate min distance
 	    update the _distance variable.
 	    '''
-	    # yyy
+	         # yyy s
             scan_filter = self.get_scan()
-            print(scan_filter)
- #           _distance = min(scan_filter)
-            # yyy
-
-      #      if _distance < SAFE_STOP_DISTANCE and _distance > 0:
-     #           move_cmd.linear.x = 0.0
-    #            move_cmd.angular.z = 0.0
-   #             print("Obstacle")
-  #              rospy.loginfo('Obstacle detected!')
- #           else:
-#		print("a")
-    #            '''
-     #          	Use the logic of the *_pointop_key.py code here to move the robot from one position to another
-#		'''
-#
-            # yyy
+            # print(scan_filter)
+            _distance = min(scan_filter)
+             # yyy e
+            print("distnace: " +str(_distance))
+            if _distance < SAFE_STOP_DISTANCE and _distance > 0:
+                move_cmd.linear.x = 0.0
+                move_cmd.angular.z = 0.0
+                rospy.loginfo('Obstacle detected!')
+                # yyy s
+                # use continue instead of else
+                self.cmd_vel.publish(move_cmd)
+                r.sleep()
+                continue
+                # yyy e
+            else:
+                pass
+                '''
+                Use the logic of the *_pointop_key.py code here to move the robot from one position to another
+		        '''
+            # yyy s
             if path_angle < -pi/4 or path_angle > pi/4:
                 if goal_y < 0 and y_start < goal_y:
                     path_angle = -2*pi + path_angle
@@ -219,6 +242,7 @@ class GotoPoint():
             last_rotation = rotation
             self.cmd_vel.publish(move_cmd)
             r.sleep()
+
         position, rotation = self.curr_position, self.curr_rotation
 
         while abs(rotation - goal_z) > 0.05:
@@ -243,8 +267,7 @@ class GotoPoint():
 
         rospy.loginfo("Stopping the robot...")
         self.cmd_vel.publish(Twist())
-        # yyy
-
+        # yyy e
 
     def getkey(self):
         x, y, z = raw_input("| x | y | z |\n").split()
@@ -252,7 +275,6 @@ class GotoPoint():
             self.shutdown()
         x, y, z = [float(x), float(y), float(z)]
         return x, y, z
-
 
     def getWaypoint(self):
         val = self.waypoints[self.waypoint_counter]
@@ -264,7 +286,6 @@ class GotoPoint():
         print(x, y, z)
         return x, y, z
 
-
     def get_position_cb(self, msg):
         '''
         Update the self.curr_position and self.curr_rotation in this callback function to the position_topic.
@@ -273,17 +294,29 @@ class GotoPoint():
         2. "Writing a subscriber" section in http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29"
         3. HW1 turtles_assemble.py	 
         '''  
-	#print(msg)
-        # yyy      
+        # yyy s    
         x, y = msg.pose.pose.position.x, msg.pose.pose.position.y
         rpy = euler_from_quaternion((msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
 
         self.curr_position.x = x
         self.curr_position.y = y
         self.curr_rotation = rpy[2]
-        # yyy
-        
-
+       
+        # Adding plot data -- might have to put this somewehre else
+        self.plot_data[0].append(x)
+        self.plot_data[1].append(y)
+        # yyy e
+    
+    # yyy s
+    # Getting the plot
+    def get_plot(self):
+        fig = plt.figure()
+        plt.title("Turtlebot Position")
+        ax = plt.axes()
+        ax.plot(self.plot_data[0], self.plot_data[1])
+        plt.savefig("Task3.png")
+        plt.show()
+    # yyy e
 
     def shutdown(self):
         self.cmd_vel.publish(Twist())
@@ -301,8 +334,9 @@ if __name__ == '__main__':
     try:
         obj = GotoPoint(args.position_topic, args.velocity_topic, args.scan_topic)
         while not rospy.is_shutdown():
-            #print(print_msg)
             obj.go_to_waypoint()
     except Exception as e: 
         print(e)
         rospy.loginfo("shutdown program now.")
+    
+    obj.get_plot()
