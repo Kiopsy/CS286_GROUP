@@ -36,8 +36,7 @@
     Rosbag Recording for each part:
         1. rosbag record -O turtlesim_rosbag /odom /scan /tf
         2. rosbag record -O turtlesim_rosbag /camera/sample/odom /scan /tf
-        3. rosbag record -O turtlesim_rosbag /odom /scan /tf
-
+        
 '''
 # yyy
 
