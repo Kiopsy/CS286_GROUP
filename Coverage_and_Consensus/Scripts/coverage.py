@@ -16,9 +16,12 @@ class Robot(object):
         self.k = k * 0.001
 
     def update(self):     # update the robot state
+        # Below was given
+        #self._state += self.k * self.input
+        #self._stoch_state = self._state + np.random.randn(2)
 
-        self._state += self.k * self.input
-        self._stoch_state = self._state + np.random.randn(2)
+        self._state = np.add(self._state, np.multiply(self.k, np.array(self.input))).tolist()
+        self._stoch_state = np.add(np.array(self._state), np.random.randn(2)).tolist()
         self.input = [0, 0]
 
     @property
@@ -58,6 +61,7 @@ class Environment(object):
         boty = state[1]
         x = point[0]
         y = point[1]
+        # Return Euclidean distance
         return math.sqrt((botx - x)**2 + (boty - y)**2)
 
     # calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
@@ -70,36 +74,36 @@ class Environment(object):
         # For each robot in environment 
         for bot in self.robots:
             # Get sensing function value
-            f = sensing_func(bot._state, point)
+            f = self.sensing_func(bot.state, point)
             # Append output of sensing function to f_vals before modification
             f_values.append(f)
-            # Raise f to the power of alpha
-            f = f**self.alpha
+            print("F before: " + str(f))
+            if f != 0:
+                # Raise f to the power of alpha
+                f = f**self.alpha
+            print("F after: " + str(f))
             # Add modified sensing function output to g_alpha
             g_alpha += f
+            print("G alpha: " + str(g_alpha))
         # Raise g_alpha to the power of 1 / alpha
         g_alpha = g_alpha**(1 / self.alpha)
+        print("G alpha final: " + str(g_alpha))
 
         # Define initial p_dot value 
         p_dot = 0
-        for f_val in f_values:
-            quot = (f_val / g_alpha)**(self.alpha - 1)
-            # Note: f_val may need to be changed. This works if (q - p_i) is euclidean distance
-            # Will be different if element-wise subtraction
-            prod = quot * value * f_val
+        for index, robot in enumerate(self.robots):
+            quot = (f_values[index] / g_alpha)
+            if quot != 0:
+                quot = quot**(self.alpha - 1)
+            prod = quot * value
+            state_arr = np.array(robot.state)
+            point_arr = np.array(point)
+            prod = np.multiply(prod, np.subtract(state_arr, point_arr))
             p_dot += prod
 
-        # Return control
-        return p_dot
-
-
-
-
-        
-
-
-
-        raise NotImplementedError
+        # Change control input
+        self.input = p_dot.tolist()
+        self.moves()
 
     def update_gradient(self, iter = 0):
         # rv = None
@@ -183,14 +187,14 @@ def target(iter):
 
 if __name__ == "__main__":
 
-    rob1 = Robot([4, 1])
-    rob2 = Robot([2, 2])
-    rob3 = Robot([5, 6])
-    rob4 = Robot([3, 4])
+    rob1 = Robot([4, 1], 0.5)
+    rob2 = Robot([2, 2], 0.5)
+    rob3 = Robot([5, 6], 0.5)
+    rob4 = Robot([3, 4], 0.5)
     robots = [rob1, rob2, rob3, rob4]
 
-    # env = Environment(10, 10, 0.1, robots)
-    # env = Environment(10, 10, 0.1, robots, target=(5,5))
+    env = Environment(10, 10, 0.1, robots)
+    #env = Environment(10, 10, 0.1, robots, target=(5,5))
 
 
-    run_grid(env, 5)
+    run_grid(env, 10)
