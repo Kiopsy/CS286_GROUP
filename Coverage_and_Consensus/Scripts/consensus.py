@@ -65,7 +65,20 @@ class Graph(object):
     # update the graph
     def update_graph(self):
 
-        raise NotImplementedError
+        # Returns a list of nodes that are neighbors to the input node
+        def neighbors(node):
+            for i in range(len(self.node_list)):
+                    print()
+            return []
+
+        a = self.adj_matrix
+        epsilon = self._epsilon
+
+
+        # Want to update each node in node list
+        for node in self.node_list:
+            value = 0
+            
 
     # return the state of the nodes currently - you can disable print here
     def node_states(self):
