@@ -4,17 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
-
-add_noise = 0
+# Globals dealing with noise & adversary nodes
+add_noise = 1
 add_adversary = 0
-
-# Graph theory concepts!
-# degree == number of neighbors
-# path, connectivity
-# adjacency list
-
-# A graph is connected if all verticies are connected 
-
 
 # nodes for storing information
 class Node(object):
@@ -23,15 +15,16 @@ class Node(object):
 
         # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            init_state = np.random.normal(loc = init_state, scale = 0.1)
+            init_state = np.float64(np.random.normal(loc = init_state, scale = 0.1))
             
         self._prev_state = init_state
         self._next_state = init_state
 
     # store the state update
     def update(self, update):
+        # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            update = np.random.normal(loc = update, scale = 0.1)
+            update = np.float64(np.random.normal(loc = update, scale = 0.1))
         self._next_state += update
 
     # push the state update
@@ -83,9 +76,7 @@ class Graph(object):
 
         self.node_list = node_list
         self.adj_matrix = adj_matrix
-
         self._epsilon = epsilon
-        
         self._finished = False      # bool determining when we've reached a threshold
         self._threshold = threshold
         self._sigma = sigma
@@ -93,17 +84,11 @@ class Graph(object):
     # update the graph
     def update_graph(self):
 
-        # Returns a list of nodes that are neighbors to the input node
-        def neighbors(node):
-            neighbor_list = []
-            for i in range(len(self.node_list)):
-                if self.adj_matrix[node.id][i]:
-                    neighbor_list.append(self.node_list[i])
-            return neighbor_list
-
-
         adj = self.adj_matrix
         
+        # Representing Oflati-Saber's Equation 15
+
+        # Update each node's next state in the graph
         for i in range(len(adj)):
             curr_node = self.node_list[i]
             sum = 0
@@ -115,6 +100,7 @@ class Graph(object):
             
             curr_node.update(self._epsilon * sum)
 
+        # Step each node in the graph once updated
         for node in self.node_list:
             node.step()
 
@@ -130,17 +116,11 @@ class Graph(object):
 
     # check if the graph has reached consensus somehow, even if there are adversaries
     def is_finished(self):
-        # all(self.node_list[0].state == n.state for n in self.node_list)
-        consensus_val = self.node_list[0].state
-        for node in self.node_list:
-            if node.state != consensus_val:
-                return False
-        return True
+        return all(self.node_list[0].state == n.state for n in self.node_list)
         
     @property
     def finished(self):
         self._finished = self.is_finished()
-
         return self._finished
 
 
@@ -187,7 +167,7 @@ def fiedler(adj_mat):
 
 
 # plots the development of node values in the consensus problem over time
-def plot_states(node_states):
+def plot_states(node_states, title):
 
     steps = np.arange(len(node_states))
 
@@ -195,7 +175,8 @@ def plot_states(node_states):
     for i in range(node_states.shape[1]):
         line, = ax.plot(steps, node_states[:, i])
         line.set_label(i)
-    
+
+    plt.title(title)
     plt.legend()
     plt.show()
 
@@ -237,16 +218,20 @@ if __name__ == "__main__":
                     [1, 1, 1, 2, 0]])
 
     matrix_list = [linear, circular, fully_conected, q2d]
+    title_names = ["Linear formation graph", 
+                   "Circular formation graph", 
+                   "Fully connected formation graph", 
+                   "Doubly connected formation graph"]
 
-    for adj_matrix in matrix_list:
-        graph = Graph(node_list, adj_matrix)
+    for i in range(len(matrix_list)):
+        graph = Graph(node_list, matrix_list[i])
         node_states = []
-        for _ in range(100): # while not graph.finished:
+        for _ in range(100): 
             graph.update_graph()
             node_states.append(graph.node_states())
 
         node_states = np.array(node_states)
-        plot_states(node_states)
+        plot_states(node_states, title_names[i])
     
 
 
