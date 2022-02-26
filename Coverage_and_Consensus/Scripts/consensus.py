@@ -50,6 +50,7 @@ class AdversaryNode(object):
     # store the state update
     def update(self, update = None):
 
+        # if no update value, move update towards the target with epsilon change
         if not update:
             if self._next_state < self._target:
                 update = self._epsilon
@@ -127,13 +128,16 @@ class Graph(object):
 # return a random adjacency matrix
 def rand_adj(dim, p):
 
+    # initialize a dim x dim matrix with all zeroes
     adj_matrix = np.zeros((dim, dim))
 
+    # loop across i,j in the matrix without hitting j,i
     for i in range(dim):
         for j in range(i, dim):
+
+            # set matrix[i][j] and matrix [j][i] to 1 a random number gen falls under probability p
             adj_matrix[i][j] = adj_matrix[j][i] = int(random.uniform(0, 1) < p)
 
-    print(adj_matrix)
     return adj_matrix
 
 
@@ -159,10 +163,11 @@ def fiedler(adj_mat):
         from scipy.sparse.csgraph import laplacian
         lap_matrix = laplacian(adj_mat)
 
+    # get the eigenvalues of the laplacian matrix
     e_values, _ = np.linalg.eig(lap_matrix)
 
+    # return the fiedler value (the second smallest eigenvalue) of the lapacian matrix
     e_values.sort()
-
     return e_values[1]
 
 
