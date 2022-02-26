@@ -23,6 +23,7 @@ class Robot(object):
         self._state = np.add(self._state, np.multiply(self.k, np.array(self.input))).tolist()
         self._stoch_state = np.add(np.array(self._state), np.random.randn(2)).tolist()
         self.input = [0, 0]
+        print("UPDATING ROBOT STATE TO... " + str(self._state))
 
     @property
     def state(self):
@@ -57,6 +58,8 @@ class Environment(object):
 
     def sensing_func(self, state, point):
         # Rename variables
+        print("BOT STATE: " + str(state))
+        print("POINT: " + str(point))
         botx = state[0]
         boty = state[1]
         x = point[0]
@@ -90,34 +93,40 @@ class Environment(object):
         print("G alpha final: " + str(g_alpha))
 
         # Define initial p_dot value 
-        p_dot = 0
         for index, robot in enumerate(self.robots):
+            # Calculate quotient
             quot = (f_values[index] / g_alpha)
             if quot != 0:
+                # Raise quotient to power of alpha - 1
                 quot = quot**(self.alpha - 1)
-            prod = quot * value
-            state_arr = np.array(robot.state)
+            # Covert point and robot state to numpy arrays for vector ops
             point_arr = np.array(point)
-            prod = np.multiply(prod, np.subtract(state_arr, point_arr))
-            p_dot += prod
+            state_arr = np.array(robot.state)
+            # Find direction of motion for next iteration
+            prod = np.multiply(quot, np.subtract(point_arr, state_arr))
+            # Multiply by importance value
+            prod = np.multiply(prod, value)
+            # Updat robot input
+            robot.input = np.add(np.array(robot.input), prod).tolist()
+            print("ROBOT INPUT: " + str(robot.input))
 
-        # Change control input
-        self.input = p_dot.tolist()
-        self.moves()
 
     def update_gradient(self, iter = 0):
-        # rv = None
-        # if(type(self.target) is np.ndarray):
-        #     rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
-        # else:
-        #     rv =  multivariate_normal(mean = self.target, cov = self.cov)
+        # Comment out below 5 lines for 1(A)
+        rv = None
+        if (type(self.target) is np.ndarray):
+            rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
+        else:
+            rv =  multivariate_normal(mean = self.target, cov = self.cov)
 
         for x in self.pointsx:
             for y in self.pointsy:
                 value = 1
-                # value = rv.pdf((x,y))
+                # Comment out below line for 1(A)
+                value = rv.pdf((x,y))
 
                 self.mix_func(np.array([x, y]), value)
+
 
     def moves(self):
         for bot in self.robots:
@@ -194,7 +203,8 @@ if __name__ == "__main__":
     robots = [rob1, rob2, rob3, rob4]
 
     env = Environment(10, 10, 0.1, robots)
-    #env = Environment(10, 10, 0.1, robots, target=(5,5))
+    # Comment out below line for 1(A)
+    env = Environment(10, 10, 0.1, robots, target=(5,5))
 
 
     run_grid(env, 10)
