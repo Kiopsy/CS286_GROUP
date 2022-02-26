@@ -1,8 +1,12 @@
 from mimetypes import init
+from tkinter import E
 import numpy as np
 import matplotlib.pyplot as plt
+import random
 
-add_noise = 1
+
+add_noise = 0
+add_adversary = 0
 
 # Graph theory concepts!
 # degree == number of neighbors
@@ -19,7 +23,7 @@ class Node(object):
 
         # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            init_state += np.random.normal(scale = 0.1)
+            init_state = np.random.normal(loc = init_state, scale = 0.1)
             
         self._prev_state = init_state
         self._next_state = init_state
@@ -27,7 +31,7 @@ class Node(object):
     # store the state update
     def update(self, update):
         if add_noise:
-            update += np.random.normal(scale = 0.1)
+            update = np.random.normal(loc = update, scale = 0.1)
         self._next_state += update
 
     # push the state update
@@ -51,9 +55,17 @@ class AdversaryNode(object):
         self._epsilon = epsilon_adv
 
     # store the state update
-    def update(self, update):
-    
-        raise NotImplementedError
+    def update(self, update = None):
+
+        if not update:
+            if self._next_state < self._target:
+                update = self._epsilon
+            elif self._next_state > self._target:
+                update = -self._epsilon
+            else:
+                update = 0
+
+        self._next_state += update
 
     # push the state update
     def step(self):
@@ -118,6 +130,7 @@ class Graph(object):
 
     # check if the graph has reached consensus somehow, even if there are adversaries
     def is_finished(self):
+        # all(self.node_list[0].state == n.state for n in self.node_list)
         consensus_val = self.node_list[0].state
         for node in self.node_list:
             if node.state != consensus_val:
@@ -134,12 +147,43 @@ class Graph(object):
 # return a random adjacency matrix
 def rand_adj(dim, p):
 
-    raise NotImplementedError
+    adj_matrix = np.zeros((dim, dim))
+
+    for i in range(dim):
+        for j in range(i, dim):
+            adj_matrix[i][j] = adj_matrix[j][i] = int(random.uniform(0, 1) < p)
+
+    print(adj_matrix)
+    return adj_matrix
+
 
 # return the Fiedler value to show strong connection of the array
 def fiedler(adj_mat):
+    # SOURCES
+    # Read pg 7 : https://www.math.umd.edu/~immortal/MATH401/book/ch_graph_theory.pdf
+    # Eigenvalues : https://lpsa.swarthmore.edu/MtrxVibe/EigMat/MatrixEigen.html
+    # Laplacian Matrix = Degree matrix - Adjacency Matrix
+    # https://datascience.stackexchange.com/questions/54414/how-do-i-generate-a-laplacian-matrix-for-a-graph-dataset
 
-    raise NotImplementedError
+    if False:
+        # METHOD 1 : FIND THE LAPLACIAN MATRIX FROM FINDING THE DEGREE MATRIX AND SUBTRACTING THEM
+        deg_matrix = []
+        for i in range(len(adj_mat)):
+            new_row = [0] * len(adj_mat[0])
+            new_row[i] = np.count_nonzero(adj_mat[0])
+            deg_matrix.append(new_row)
+        
+        lap_matrix = np.subtract(deg_matrix, adj_mat)
+    else:
+        # METHOD 2 : FIND THE LAPLACIAN MATRIX USING A SCIPY FUNCTION
+        from scipy.sparse.csgraph import laplacian
+        lap_matrix = laplacian(adj_mat)
+
+    e_values, _ = np.linalg.eig(lap_matrix)
+
+    e_values.sort()
+
+    return e_values[1]
 
 
 # plots the development of node values in the consensus problem over time
@@ -160,7 +204,9 @@ if __name__ == "__main__":
 
     node_list = [Node(4.0), Node(2.0), Node(-1.0), Node(3.0), Node(0.0)]
 
-    # stoch_altered_node_list = [Node(np.random.normal(scale = 0.1) + node.state()) for node in node_list]
+    if add_adversary:
+        init_state, target, epsilon = 0, 0, 0
+        node_list.append(AdversaryNode(init_state, target, epsilon))
 
     # linear formation
     linear = np.array([[0, 1, 0, 0, 0],
@@ -183,13 +229,19 @@ if __name__ == "__main__":
                             [1, 1, 1, 0, 1],
                             [1, 1, 1, 1, 0]])
 
-    matrix_list = [linear, circular, fully_conected]
+    # fully connected formation as described in question 2 d
+    q2d = np.array([[0, 2, 1, 1, 1],
+                    [2, 0, 2, 1, 1],
+                    [1, 2, 0, 2, 1],
+                    [1, 1, 2, 0, 2],
+                    [1, 1, 1, 2, 0]])
+
+    matrix_list = [linear, circular, fully_conected, q2d]
 
     for adj_matrix in matrix_list:
         graph = Graph(node_list, adj_matrix)
         node_states = []
-        for _ in range(100):
-        # while not graph.finished:
+        for _ in range(100): # while not graph.finished:
             graph.update_graph()
             node_states.append(graph.node_states())
 
