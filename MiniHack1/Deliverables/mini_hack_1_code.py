@@ -15,18 +15,18 @@
 # limitations under the License.
 #################################################################################
 
-# Authors: Gilbert #
+# Authors: Kerem Dayi, Emeka Ezike, Dominic Garrity, and Victor Goncalves #
 
 # Mini-Hack-1 Steps for Execution
 '''
 	For part 1: 
 	- (ssh) roslaunch turtlebot3_bringup turtlebot3_robot.launch
-	- python mini_hack_1_skeleton_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
+	- python mini_hack_1_code.py --position_topic \odom --velocity_topic \cmd_vel --scan_topic \scan
 
 	For part 2: 
 	- tab1: (ssh) roslaunch turtlebot3_bringup turtlebot3_robot.launch
 	- tab2: (ssh) roslaunch realsense2_camera rs_t265.launch
-	- tab3: python mini_hack_1_skeleton_code.py --position_topic /camera/odom/sample --velocity_topic \cmd_vel --scan_topic \scan
+	- tab3: python mini_hack_1_code.py --position_topic /camera/odom/sample --velocity_topic \cmd_vel --scan_topic \scan
 
     For part 3:
 
@@ -54,9 +54,6 @@ import argparse
 #Import the package corresponding to the message type of the position_topic from nav_msgs
 #New===
 
-STOP_DISTANCE = 0.4
-LIDAR_ERROR = 0.05
-SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR
 LINEAR_VEL = 0.22
 STOP_DISTANCE = 0.4
 LIDAR_ERROR = 0.05
@@ -85,6 +82,9 @@ class GotoPoint():
 
         # Creating a publisher and subsciber
         self.cmd_vel = rospy.Publisher(velocity_topic, Twist, queue_size=5)
+        '''
+        Listen to the input topic, use the Odometry type message, and use the get_position_cb callback funcitons
+	    '''
         self.sub_pos = rospy.Subscriber(position_topic, Odometry, self.get_position_cb)
         
         # Data to plot [[x], [y]]
@@ -169,6 +169,7 @@ class GotoPoint():
             scan_filter = self.get_scan()
             _distance = min(scan_filter)
             print("distnace: " +str(_distance))
+
             if _distance < SAFE_STOP_DISTANCE and _distance > 0:
                 move_cmd.linear.x = 0.0
                 move_cmd.angular.z = 0.0
@@ -176,11 +177,10 @@ class GotoPoint():
                 self.cmd_vel.publish(move_cmd)
                 r.sleep()
                 continue
-            else:
-                pass
-                '''
-                Use the logic of the *_pointop_key.py code here to move the robot from one position to another
-		        '''
+
+            '''
+            Use the logic of the *_pointop_key.py code here to move the robot from one position to another
+            '''
 
             if path_angle < -pi/4 or path_angle > pi/4:
                 if goal_y < 0 and y_start < goal_y:
@@ -229,7 +229,7 @@ class GotoPoint():
 
         rospy.loginfo("Stopping the robot...")
         self.cmd_vel.publish(Twist())
-        # yyy e
+
 
     def getkey(self):
         x, y, z = raw_input("| x | y | z |\n").split()
@@ -255,15 +255,18 @@ class GotoPoint():
         1. get_odom() function in the *_pointop_key.py
         2. "Writing a subscriber" section in http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29"
         3. HW1 turtles_assemble.py	 
-        '''    
+        '''  
+        # Get x and y from the odometry message  
         x, y = msg.pose.pose.position.x, msg.pose.pose.position.y
+        # Use euler_from_quaternion to get the roll, pitch, and yaw 
         rpy = euler_from_quaternion((msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w))
 
+        # Update the class values
         self.curr_position.x = x
         self.curr_position.y = y
         self.curr_rotation = rpy[2]
        
-        # Adding plot data
+        # Adding position data for plotting
         self.plot_data[0].append(x)
         self.plot_data[1].append(y)
 
@@ -272,8 +275,9 @@ class GotoPoint():
         fig = plt.figure()
         plt.title("Turtlebot Position")
         ax = plt.axes()
+        # plot the collected position data
         ax.plot(self.plot_data[0], self.plot_data[1])
-        plt.savefig("Task3.png")
+        plt.savefig("Task.png")
         plt.show()
 
     def shutdown(self):
