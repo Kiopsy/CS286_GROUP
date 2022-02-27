@@ -8,7 +8,7 @@ from scipy.stats import multivariate_normal
 
 class Robot(object):
 
-    def __init__(self, state, k=0.1):
+    def __init__(self, state, k=1):
         self._state = state     # 2-vec
         self._stoch_state = self._state + np.random.randn(2)
         self.input = [0,0]      # movement vector later
@@ -77,47 +77,52 @@ class Environment(object):
             f = self.sensing_func(bot.state, point)
             # Append output of sensing function to f_vals before modification
             f_values.append(f)
-            print("F before: " + str(f))
             if f != 0:
                 # Raise f to the power of alpha
                 f = f**self.alpha
-            print("F after: " + str(f))
             # Add modified sensing function output to g_alpha
             g_alpha += f
-            print("G alpha: " + str(g_alpha))
         # Raise g_alpha to the power of 1 / alpha
         g_alpha = g_alpha**(1 / self.alpha)
-        print("G alpha final: " + str(g_alpha))
 
         # Define initial p_dot value 
-        p_dot = 0
         for index, robot in enumerate(self.robots):
+            # Calculate quotient
             quot = (f_values[index] / g_alpha)
             if quot != 0:
+                # Raise quotient to power of alpha - 1
                 quot = quot**(self.alpha - 1)
-            prod = quot * value
-            state_arr = np.array(robot.state)
+            # Covert point and robot state to numpy arrays for vector ops
             point_arr = np.array(point)
-            prod = np.multiply(prod, np.subtract(state_arr, point_arr))
-            p_dot += prod
+            state_arr = np.array(robot.state)
+            # Find direction of motion for next iteration
+            prod = np.multiply(quot, np.subtract(point_arr, state_arr))
+            # Multiply by importance value
+            prod = np.multiply(prod, value)
+            # Updat robot input
+            robot.input = np.add(np.array(robot.input), prod).tolist()
 
-        # Change control input
-        self.input = p_dot.tolist()
-        self.moves()
 
     def update_gradient(self, iter = 0):
-        # rv = None
-        # if(type(self.target) is np.ndarray):
-        #     rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
-        # else:
-        #     rv =  multivariate_normal(mean = self.target, cov = self.cov)
+        '''
+        # Below 5 lines are for 1(B) and 1(C)
+        rv = None
+        if (type(self.target) is np.ndarray):
+            rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
+        else:
+            rv =  multivariate_normal(mean = self.target, cov = self.cov)
+        '''
 
         for x in self.pointsx:
             for y in self.pointsy:
                 value = 1
-                # value = rv.pdf((x,y))
+                '''
+                # Below line is for 1(B)
+                value = rv.pdf((x,y))
+                '''
 
                 self.mix_func(np.array([x, y]), value)
+
 
     def moves(self):
         for bot in self.robots:
@@ -143,7 +148,6 @@ def run_grid(env, iter):
         env.moves()
 
         for i, bot in enumerate(env.robots):
-
             x[i].append(bot.state[0])
             y[i].append(bot.state[1])
 
@@ -165,6 +169,12 @@ def run_grid(env, iter):
     if(type(env.target) is np.ndarray):
         for i in range(env.target.shape[1]):
             plt.scatter(env.target[0, i], env.target[1, i], alpha=(i+1)/env.target.shape[1])
+            # Adding below
+    elif len(env.target) == 0:
+        pass
+    else:
+        plt.scatter(env.target[0], env.target[1])
+
 
     # set polygon bounds
     bounds = Polygon([(0,0), (10,0), (10,10), (0, 10)])
@@ -177,7 +187,9 @@ def run_grid(env, iter):
     
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
-
+    plt.title("Robot (and Target) Positions")
+    plt.xlabel("X Position")
+    plt.ylabel("Y Position")
     plt.show()
     
 # generate target points
@@ -186,15 +198,36 @@ def target(iter):
     raise NotImplementedError
 
 if __name__ == "__main__":
-
+    iter = 200
     rob1 = Robot([4, 1], 0.5)
     rob2 = Robot([2, 2], 0.5)
     rob3 = Robot([5, 6], 0.5)
     rob4 = Robot([3, 4], 0.5)
     robots = [rob1, rob2, rob3, rob4]
-
+    
+    # Below line is for 1(A)
     env = Environment(10, 10, 0.1, robots)
-    #env = Environment(10, 10, 0.1, robots, target=(5,5))
+    
+    
+    '''
+    # Below line is for 1(B)
+    env = Environment(10, 10, 0.1, robots, target=(5,5))
+    '''
+    
 
+    '''
+    # Doing 1(C) below
+    pi = np.pi
+    theta = np.linspace(0, (2 * pi) * (iter / 800), iter)
 
-    run_grid(env, 10)
+    radius = 3
+
+    x = radius * np.cos(theta) + 5
+    y = radius * np.sin(theta) + 5
+
+    target1 = np.array([x, y])
+
+    env = Environment(10, 10, 0.1, robots, target=target1)
+    '''
+
+    run_grid(env, iter)
