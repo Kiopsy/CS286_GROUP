@@ -44,8 +44,8 @@ class AdversaryNode(object):
 
     def __init__(self, init_state, target, epsilon_adv = 0.01):
 
-        self._prev_state = init_state
-        self._next_state = init_state
+        self._prev_state = np.float64(init_state)
+        self._next_state = np.float64(init_state)
         
         self._target = target
         self._epsilon = epsilon_adv
