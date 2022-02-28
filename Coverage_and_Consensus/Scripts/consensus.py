@@ -17,10 +17,10 @@ class Node(object):
 
         # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            init_state += np.float64(np.random.normal(scale = 0.1))
+            init_state += np.random.normal(scale = 0.1)
             
-        self._prev_state = init_state
-        self._next_state = init_state
+        self._prev_state = np.float64(init_state)
+        self._next_state = np.float64(init_state)
 
     # store the state update
     def update(self, update):
@@ -244,7 +244,7 @@ if __name__ == "__main__":
 
     for i in range(len(matrix_list)):
         graph = Graph(copy.deepcopy(node_list), matrix_list[i])
-        node_states = []
+        node_states = [graph.node_states()]
         for j in range(100): 
             graph.update_graph()
             node_states.append(graph.node_states())
@@ -254,20 +254,20 @@ if __name__ == "__main__":
         node_states = np.array(node_states)
         plot_states(node_states, title_names[i])
     
-    ps = [1/3, 1/2, 2/3]
+    ps = [1/10, 1/3, 2/3]
     for p in ps:
         nodes = copy.deepcopy(node_list)
         node_states = []
-        for j in range(100): 
+        for j in range(101): 
             graph = Graph(nodes, rand_adj(len(nodes), p))
-            graph.update_graph()
             node_states.append(graph.node_states())
+            graph.update_graph()
             nodes = copy.deepcopy(graph.node_list)
             if graph.finished:
                 print(f"Consensus for {title_names[-1]}{p:.2f} reached at t = {j}")
             
         node_states = np.array(node_states)
-        plot_states(node_states, title_names[-1] + str(p))
+        plot_states(node_states, "{}{:.2f}".format(title_names[-1], p))
  
 
 
