@@ -4,8 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+import copy
+
 # Globals dealing with noise & adversary nodes
-add_noise = 1
+add_noise = 0
 add_adversary = 0
 
 # nodes for storing information
@@ -15,7 +17,7 @@ class Node(object):
 
         # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            init_state = np.float64(np.random.normal(loc = init_state, scale = 0.1))
+            init_state += np.float64(np.random.normal(scale = 0.1))
             
         self._prev_state = init_state
         self._next_state = init_state
@@ -24,7 +26,8 @@ class Node(object):
     def update(self, update):
         # adds the gaussian noise w st. d = 0.1
         if add_noise:
-            update = np.float64(np.random.normal(loc = update, scale = 0.1))
+            update += np.float64(np.random.normal(scale = 0.1))
+
         self._next_state += update
 
     # push the state update
@@ -48,18 +51,17 @@ class AdversaryNode(object):
         self._epsilon = epsilon_adv
 
     # store the state update
-    def update(self, update = None):
+    def update(self, update):
 
-        # if no update value, move update towards the target with epsilon change
-        if not update:
-            if self._next_state < self._target:
-                update = self._epsilon
-            elif self._next_state > self._target:
-                update = -self._epsilon
-            else:
-                update = 0
+        # set update regardless, move update towards the target with epsilon change
+        if self._next_state < self._target:
+            update = self._epsilon
+        elif self._next_state > self._target:
+            update = -self._epsilon
+        else:
+            update = 0
 
-        self._next_state += update
+        self._next_state += np.float64(update)
 
     # push the state update
     def step(self):
@@ -117,7 +119,18 @@ class Graph(object):
 
     # check if the graph has reached consensus somehow, even if there are adversaries
     def is_finished(self):
-        return all(self.node_list[0].state == n.state for n in self.node_list)
+
+        # threshold for noise
+        t = 1 if add_noise else 0
+
+        # potential consensus val
+        c = self.node_list[0].state
+
+        # Note to Victor: reimplement your is finished work. This all() function is not acting as expected
+
+        return all(
+                (c - t//2) <= n.state <= (c + t//2)
+            for n in self.node_list)
         
     @property
     def finished(self):
@@ -131,7 +144,7 @@ def rand_adj(dim, p):
     # initialize a dim x dim matrix with all zeroes
     adj_matrix = np.zeros((dim, dim))
 
-    # loop across i,j in the matrix without hitting j,i
+    # loop across all i,j in the matrix but skip all j,i
     for i in range(dim):
         for j in range(i, dim):
 
@@ -191,8 +204,8 @@ if __name__ == "__main__":
     node_list = [Node(4.0), Node(2.0), Node(-1.0), Node(3.0), Node(0.0)]
 
     if add_adversary:
-        init_state, target, epsilon = 0, 0, 0
-        node_list.append(AdversaryNode(init_state, target, epsilon))
+        init_state, target, epsilon = 3.6, 0.0, 0.01
+        node_list[-1] = AdversaryNode(init_state, target, epsilon)
 
     # linear formation
     linear = np.array([[0, 1, 0, 0, 0],
@@ -226,17 +239,35 @@ if __name__ == "__main__":
     title_names = ["Linear formation graph", 
                    "Circular formation graph", 
                    "Fully connected formation graph", 
-                   "Doubly connected formation graph"]
+                   "Doubly connected formation graph",
+                   "Randomly connected graph: p = "]
 
     for i in range(len(matrix_list)):
-        graph = Graph(node_list, matrix_list[i])
+        graph = Graph(copy.deepcopy(node_list), matrix_list[i])
         node_states = []
-        for _ in range(100): 
+        for j in range(100): 
             graph.update_graph()
             node_states.append(graph.node_states())
+            if graph.finished:
+                print(f"Consensus for {title_names[i]} reached at t = {j}")
 
         node_states = np.array(node_states)
         plot_states(node_states, title_names[i])
     
+    ps = [1/3, 1/2, 2/3]
+    for p in ps:
+        nodes = copy.deepcopy(node_list)
+        node_states = []
+        for j in range(100): 
+            graph = Graph(nodes, rand_adj(len(nodes), p))
+            graph.update_graph()
+            node_states.append(graph.node_states())
+            nodes = copy.deepcopy(graph.node_list)
+            if graph.finished:
+                print(f"Consensus for {title_names[-1]}{p:.2f} reached at t = {j}")
+            
+        node_states = np.array(node_states)
+        plot_states(node_states, title_names[-1] + str(p))
+ 
 
 
