@@ -230,7 +230,7 @@ if __name__ == "__main__":
                             [1, 1, 1, 0, 1],
                             [1, 1, 1, 1, 0]])
 
-    # fully connected formation as described in question 2 d
+    # doubly connected formation as described in question 2d
     q2d = np.array([[0, 2, 1, 1, 1],
                     [2, 0, 2, 1, 1],
                     [1, 2, 0, 2, 1],
@@ -244,7 +244,7 @@ if __name__ == "__main__":
                    "Doubly connected formation graph",
                    "Randomly connected graph: p = "]
 
-    # Plotting graphs
+    # Plotting graphs: linear, circular, fully and doubly connected
     for i in range(len(matrix_list)):
         graph = Graph(copy.deepcopy(node_list), matrix_list[i])
         node_states = [graph.node_states()]
