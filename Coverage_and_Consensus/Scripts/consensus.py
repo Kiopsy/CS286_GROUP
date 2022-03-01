@@ -7,7 +7,7 @@ import random
 import copy
 
 # Globals dealing with noise & adversary nodes
-add_noise = 0
+add_noise = 1
 add_adversary = 0
 
 # nodes for storing information
@@ -120,17 +120,19 @@ class Graph(object):
     # check if the graph has reached consensus somehow, even if there are adversaries
     def is_finished(self):
 
-        # threshold for noise
-        t = 1 if add_noise else 0
+        # consensus threshold --> should have a greater threshold when dealing with noise
+        t = 0.1 if add_noise else 0.02
 
         # potential consensus val
         c = self.node_list[0].state
-
-        # Note to Victor: reimplement your is finished work. This all() function is not acting as expected
-
-        return all(
-                (c - t//2) <= n.state <= (c + t//2)
-            for n in self.node_list)
+        
+        at_consensus = True
+        for node in self.node_list:
+            # Check that each node state is within a threshold
+            if (node.state > c + t) or (node.state < c - t):
+                at_consensus = False
+        
+        return at_consensus
         
     @property
     def finished(self):
@@ -242,6 +244,7 @@ if __name__ == "__main__":
                    "Doubly connected formation graph",
                    "Randomly connected graph: p = "]
 
+    # Plotting graphs
     for i in range(len(matrix_list)):
         graph = Graph(copy.deepcopy(node_list), matrix_list[i])
         node_states = [graph.node_states()]
@@ -250,10 +253,12 @@ if __name__ == "__main__":
             node_states.append(graph.node_states())
             if graph.finished:
                 print(f"Consensus for {title_names[i]} reached at t = {j}")
+                break
 
         node_states = np.array(node_states)
         plot_states(node_states, title_names[i])
     
+    # Plotting the randomly connected graphs
     ps = [1/10, 1/3, 2/3]
     for p in ps:
         nodes = copy.deepcopy(node_list)
@@ -265,6 +270,7 @@ if __name__ == "__main__":
             nodes = copy.deepcopy(graph.node_list)
             if graph.finished:
                 print(f"Consensus for {title_names[-1]}{p:.2f} reached at t = {j}")
+                break
             
         node_states = np.array(node_states)
         plot_states(node_states, "{}{:.2f}".format(title_names[-1], p))
