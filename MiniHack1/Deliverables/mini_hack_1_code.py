@@ -93,9 +93,6 @@ class GotoPoint():
         self.rot = Quaternion()
         self.curr_position = Point()
         self.curr_rotation = 0
-        '''
-            Waypoints can be hardcoded
-        '''
         self.waypoints = [[2.1,0,0],[2.0,2.1,0],[0,2.1,0],[0,0,0]] #These are the rough dimensions of the testbed
         self.waypoint_counter = 0
         #=====New=====  
@@ -110,7 +107,7 @@ class GotoPoint():
         samples = len(scan.ranges)  # The number of samples is defined in 
                                     # turtlebot3_<model>.gazebo.xacro file,
         # sensing radius            # the default is 360.
-        samples_view = 45           # 1 <= samples_view <= samples
+        samples_view = 45            # 1 <= samples_view <= samples
         
         if samples_view > samples:
             samples_view = samples
@@ -167,8 +164,8 @@ class GotoPoint():
 	    
             '''
             Get the lidar distance using get_scan() function and calculate min distance
-	        update the _distance variable.
-	        '''
+	    update the _distance variable.
+	    '''
             scan_filter = self.get_scan()
             _distance = min(scan_filter)
             print("distnace: " +str(_distance))
@@ -208,10 +205,6 @@ class GotoPoint():
             self.cmd_vel.publish(move_cmd)
             r.sleep()
 
-        '''
-        use a subscriber to the topic to update the position variables used in the waypoint
-        control script since the default method that uses tf will not work.
-        ''''
         position, rotation = self.curr_position, self.curr_rotation
 
         while abs(rotation - goal_z) > 0.05:
@@ -279,10 +272,6 @@ class GotoPoint():
 
     # Getting the plot
     def get_plot(self):
-        '''
-        Create a python plot to visualize the trajectory after the robot has completed its 
-        waypoints (this can be a separate python script and can be generated offline as well).
-        '''
         fig = plt.figure()
         plt.title("Turtlebot Position")
         ax = plt.axes()
@@ -311,5 +300,5 @@ if __name__ == '__main__':
     except Exception as e: 
         print(e)
         rospy.loginfo("shutdown program now.")
-    # show script
+    
     obj.get_plot()
