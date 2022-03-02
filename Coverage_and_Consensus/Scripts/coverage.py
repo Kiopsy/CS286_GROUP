@@ -40,12 +40,12 @@ class Environment(object):
         self.height = height
         self.res = res
 
-        # bottom left corner is 0, 0 both in pixels and in meters
-        self.robots = robots        # initialized w/ array of Robot objects
+        # Bottom left corner is 0, 0 both in pixels and in meters
+        self.robots = robots        # Initialized w/ array of Robot objects
         self.meas_func = np.zeros((len(robots)))
         self.dist = np.zeros((2, len(robots)))
 
-        # define the points you're iterating over
+        # Define the points to iterate over
         self.pointsx = np.arange(0, width, res)
         self.pointsy = np.arange(0, height, res)
 
@@ -63,7 +63,7 @@ class Environment(object):
         x = point[0]
         y = point[1]
         # Calculate and return Euclidean distance
-        dist = math.sqrt((botx - x)**2 + (boty - y)**2)**2
+        dist = math.sqrt((botx - x)**2 + (boty - y)**2)
         return dist
 
     # Create function to handle cases in which terms are zero
@@ -204,12 +204,12 @@ def run_grid(env, iter, part, stoch):
     
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
-    plt.title("Robot (and Target) Positions")
+    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " + str(env.alpha))
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.legend(loc='upper left')
     plt.show()
-    
+
 # Generate target points
 def target(iter):
     pi = np.pi
@@ -228,16 +228,12 @@ def target(iter):
 
 if __name__ == "__main__":
     iter = 200
-    rob1 = Robot([4, 1], 0.5)
-    rob2 = Robot([2, 2], 0.5)
-    rob3 = Robot([5, 6], 0.5)
-    rob4 = Robot([3, 4], 0.5)
-    robots = [rob1, rob2, rob3, rob4]
 
+    ## Create vars for easier eval--just change these according to below comment!
     # Create variable for which part of question #1 is being considered
-    part = 'A'
+    part = 'B'
     # Create variable indicating whether the system is stochastic
-    stoch = True
+    stoch = False
 
     '''
     Configuration for each part:
@@ -246,18 +242,36 @@ if __name__ == "__main__":
     #1(c): part = 'C', stoch = False
     #1(E): part = 'E', stoch = True
     '''
-
+    # Create environments and run grid for different values of alpha
+    alpha_vals = [-0.5, -1, -5, -10]
     if part == 'A' or part == 'E':
-        env = Environment(10, 10, 0.1, robots)
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha)
+            run_grid(env, iter, part, stoch)
     elif part == 'B':
-        env = Environment(10, 10, 0.1, robots, target=(5,5))
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha, target=(5,5))
+            run_grid(env, iter, part, stoch)
     elif part == 'C':
         # Define dynamic, quarter-circle target with period 800
         dyn_target = target(iter)
-        env = Environment(10, 10, 0.1, robots, target=dyn_target)
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, target=dyn_target)
+            run_grid(env, iter, part, stoch)
     else:
         raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
-
-
-    # Note: The "part" and stoch arguments were added for easier use and eval
-    run_grid(env, iter, part, stoch)
