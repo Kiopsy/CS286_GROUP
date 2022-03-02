@@ -12,16 +12,14 @@ class Robot(object):
     def __init__(self, state, k=0.1):
         self._state = state     # 2-vec
         self._stoch_state = self._state + np.random.randn(2)
-        self.input = [0,0]      # movement vector later
+        self.input = [0,0]      # Movement vector
 
         self.k = k * 0.001
 
-    def update(self):     # update the robot state
-        # Below was given
-        #self._state += self.k * self.input
-        #self._stoch_state = self._state + np.random.randn(2)
-
+    def update(self):
+        # Update state (state += k * input)
         self._state = np.add(self._state, np.multiply(self.k, np.array(self.input))).tolist()
+        # Update stochastic state (stoch_state += state * + randn(2))
         self._stoch_state = np.add(np.array(self._state), np.random.randn(2)).tolist()
         self.input = [0, 0]
 
@@ -64,7 +62,7 @@ class Environment(object):
         boty = state[1]
         x = point[0]
         y = point[1]
-        # Return Euclidean distance
+        # Calculate and return Euclidean distance
         dist = math.sqrt((botx - x)**2 + (boty - y)**2)**2
         return dist
 
@@ -86,7 +84,7 @@ class Environment(object):
             updated_val = val
         return updated_val
 
-    # calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
+    # Calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
     def mix_func(self, point, stoch, value=1):  
         # Define initial g_alpha value 
         g_alpha = 0
@@ -116,7 +114,7 @@ class Environment(object):
             # Raise quotient to power of (alpha - 1) if it is not 0
             if quot != 0:
                 quot = quot**(self.alpha - 1)
-            # Covert point and robot state to numpy arrays for vector ops
+            # Covert point and robot state to numpy arrays for vector operations
             point_arr = np.array(point)
             if stoch:
                 state_arr = np.array(robot.stoch_state)
@@ -127,14 +125,14 @@ class Environment(object):
             # Multiply by importance value and dq
             prod = np.multiply(prod, value)
             prod = np.multiply(prod, self.res)
-            # Updat robot input
+            # Update robot input
             robot.input = np.add(np.array(robot.input), prod).tolist()
 
 
     def update_gradient(self, part, stoch, iter=0):
         # Below code was given
         # Create distributions for importance functions
-        if part != 'A':
+        if part != 'A' and part != 'E':
             rv = None
             if (type(self.target) is np.ndarray):
                 rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
@@ -145,7 +143,7 @@ class Environment(object):
         for x in self.pointsx:
             for y in self.pointsy:
                 value = 1
-                if part != 'A': 
+                if part != 'A' and part != 'E': 
                     value = rv.pdf((x,y))
                 
                 self.mix_func(np.array([x, y]), stoch, value)
@@ -157,13 +155,13 @@ class Environment(object):
 
 
 
-# function to run the simulation
+# Function to run the simulation
 def run_grid(env, iter, part, stoch):
     x = []
     y = []
 
 
-    # initialize state
+    # Initialize state
     for i, bot in enumerate(env.robots):
         x.append([bot.state[0]])
         y.append([bot.state[1]])
@@ -180,40 +178,27 @@ def run_grid(env, iter, part, stoch):
         if (k % 50 == 0):
             print(k)
 
-    # set up the plot
+    # Set up the plot
     fig, ax = plt.subplots()
     points = []
 
-    # plt the robot points
+    # Plot robot points
     plt.axes(ax)
     for i in range(len(env.robots)):
         plt.scatter(x[i], y[i], alpha=max((i+1)/len(x[i]), 0.35), label='Robot '+str(i))
         points.append([x[i][-1], y[i][-1]])
     
+    # Plot target, if there is one
     if len(env.target) != 0:
         plt.scatter(env.target[0], env.target[1], label='Target')
 
-    '''
-    # if there is a target setup plot it
-    if(type(env.target) is np.ndarray):
-        for i in range(env.target.shape[1]):
-            # Changed the alpha such that more recent points are darker for all robots
-            plt.scatter(env.target[0], env.target[1], label='Target')
-    # Nothing to plot in case with no target
-    elif len(env.target) == 0:
-        pass
-    # Plot single point when target is not numpy array
-    else:
-        plt.scatter(env.target[0], env.target[1], label='Target')
-    '''
 
-
-    # set polygon bounds
+    # Set polygon bounds
     bounds = Polygon([(0,0), (10,0), (10,10), (0, 10)])
     b_x, b_y = bounds.exterior.xy
     plt.plot(b_x, b_y)        
 
-    # set Voronoi
+    # Set Voronoi
     vor = Voronoi(np.array(points))
     voronoi_plot_2d(vor, ax=ax)
     
@@ -225,7 +210,7 @@ def run_grid(env, iter, part, stoch):
     plt.legend(loc='upper left')
     plt.show()
     
-# generate target points
+# Generate target points
 def target(iter):
     pi = np.pi
     # Create points for range of circle function
@@ -252,17 +237,27 @@ if __name__ == "__main__":
     # Create variable for which part of question #1 is being considered
     part = 'A'
     # Create variable indicating whether the system is stochastic
-    stoch = False
+    stoch = True
 
-    if part == 'A':
+    '''
+    Configuration for each part:
+    #1(a): part = 'A', stoch = False
+    #1(b): part = 'B', stoch = False
+    #1(c): part = 'C', stoch = False
+    #1(E): part = 'E', stoch = True
+    '''
+
+    if part == 'A' or part == 'E':
         env = Environment(10, 10, 0.1, robots)
     elif part == 'B':
         env = Environment(10, 10, 0.1, robots, target=(5,5))
-    else:
+    elif part == 'C':
         # Define dynamic, quarter-circle target with period 800
         dyn_target = target(iter)
-
         env = Environment(10, 10, 0.1, robots, target=dyn_target)
+    else:
+        raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
+
 
     # Note: The "part" and stoch arguments were added for easier use and eval
     run_grid(env, iter, part, stoch)

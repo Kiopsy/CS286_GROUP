@@ -10,27 +10,27 @@ import copy
 add_noise = 1
 add_adversary = 0
 
-# nodes for storing information
+# Nodes for storing information
 class Node(object):
 
     def __init__(self, init_state):
 
-        # adds the gaussian noise w st. d = 0.1
+        # Adds the gaussian noise w st. d = 0.1
         if add_noise:
             init_state += np.random.normal(scale = 0.1)
             
         self._prev_state = np.float64(init_state)
         self._next_state = np.float64(init_state)
 
-    # store the state update
+    # Store the state update
     def update(self, update):
-        # adds the gaussian noise w st. d = 0.1
+        # Adds the gaussian noise w st. d = 0.1
         if add_noise:
             update += np.float64(np.random.normal(scale = 0.1))
 
         self._next_state += update
 
-    # push the state update
+    # Push the state update
     def step(self):
         self._prev_state = self._next_state
 
@@ -39,7 +39,7 @@ class Node(object):
         return self._prev_state
 
 
-# adversarial node
+# Adversarial node
 class AdversaryNode(object):
 
     def __init__(self, init_state, target, epsilon_adv = 0.01):
@@ -50,10 +50,10 @@ class AdversaryNode(object):
         self._target = target
         self._epsilon = epsilon_adv
 
-    # store the state update
+    # Store the state update
     def update(self, update):
 
-        # set update regardless, move update towards the target with epsilon change
+        # Set update regardless, move update towards the target with epsilon change
         if self._next_state < self._target:
             update = self._epsilon
         elif self._next_state > self._target:
@@ -63,7 +63,7 @@ class AdversaryNode(object):
 
         self._next_state += np.float64(update)
 
-    # push the state update
+    # Push the state update
     def step(self):
         self._prev_state = self._next_state
 
@@ -80,11 +80,11 @@ class Graph(object):
         self.node_list = node_list
         self.adj_matrix = adj_matrix
         self._epsilon = epsilon
-        self._finished = False      # bool determining when we've reached a threshold
+        self._finished = False      # Bool determining when we've reached a threshold
         self._threshold = threshold
         self._sigma = sigma
 
-    # update the graph
+    # Update the graph
     def update_graph(self):
 
         adj = self.adj_matrix
@@ -107,7 +107,7 @@ class Graph(object):
         for node in self.node_list:
             node.step()
 
-    # return the state of the nodes currently - you can disable print here
+    # Return the state of the nodes currently - you can disable print here
     def node_states(self):
         string = ""
         out = []
@@ -117,13 +117,13 @@ class Graph(object):
 
         return out
 
-    # check if the graph has reached consensus somehow, even if there are adversaries
+    # Check if the graph has reached consensus somehow, even if there are adversaries
     def is_finished(self):
 
-        # consensus threshold --> should have a greater threshold when dealing with noise
+        # Consensus threshold --> should have a greater threshold when dealing with noise
         t = 0.1 if add_noise else 0.02
 
-        # potential consensus val
+        # Potential consensus val
         c = self.node_list[0].state
         
         at_consensus = True
@@ -140,23 +140,23 @@ class Graph(object):
         return self._finished
 
 
-# return a random adjacency matrix
+# Return a random adjacency matrix
 def rand_adj(dim, p):
 
-    # initialize a dim x dim matrix with all zeroes
+    # Initialize a dim x dim matrix with all zeroes
     adj_matrix = np.zeros((dim, dim))
 
-    # loop across all i,j in the matrix but skip all j,i
+    # Loop through all i,j in the matrix but skip all j,i
     for i in range(dim):
         for j in range(i, dim):
 
-            # set matrix[i][j] and matrix [j][i] to 1 a random number gen falls under probability p
+            # Set matrix[i][j] and matrix [j][i] to 1 a random number gen falls under probability p
             adj_matrix[i][j] = adj_matrix[j][i] = int(random.uniform(0, 1) < p)
 
     return adj_matrix
 
 
-# return the Fiedler value to show strong connection of the array
+# Return the Fiedler value to show strong connection of the array
 def fiedler(adj_mat):
     # SOURCES
     # Read pg 7 : https://www.math.umd.edu/~immortal/MATH401/book/ch_graph_theory.pdf
@@ -178,15 +178,15 @@ def fiedler(adj_mat):
         from scipy.sparse.csgraph import laplacian
         lap_matrix = laplacian(adj_mat)
 
-    # get the eigenvalues of the laplacian matrix
+    # Get the eigenvalues of the laplacian matrix
     e_values, _ = np.linalg.eig(lap_matrix)
 
-    # return the fiedler value (the second smallest eigenvalue) of the lapacian matrix
+    # Return the fiedler value (the second smallest eigenvalue) of the lapacian matrix
     e_values.sort()
     return e_values[1]
 
 
-# plots the development of node values in the consensus problem over time
+# Plots the development of node values in the consensus problem over time
 def plot_states(node_states, title):
 
     steps = np.arange(len(node_states))
@@ -209,28 +209,28 @@ if __name__ == "__main__":
         init_state, target, epsilon = 3.6, 0.0, 0.01
         node_list[-1] = AdversaryNode(init_state, target, epsilon)
 
-    # linear formation
+    # Linear formation
     linear = np.array([[0, 1, 0, 0, 0],
-                            [1, 0, 1, 0, 0],
-                            [0, 1, 0, 1, 0],
-                            [0, 0, 1, 0, 1],
-                            [0, 0, 0, 1, 0]])
+                        [1, 0, 1, 0, 0],
+                        [0, 1, 0, 1, 0],
+                        [0, 0, 1, 0, 1],
+                        [0, 0, 0, 1, 0]])
 
-    # circular formation
+    # Circular formation
     circular = np.array([[0, 1, 0, 0, 1],
-                            [1, 0, 1, 0, 0],
-                            [0, 1, 0, 1, 0],
-                            [0, 0, 1, 0, 1],
-                            [1, 0, 0, 1, 0]])
+                        [1, 0, 1, 0, 0],
+                        [0, 1, 0, 1, 0],
+                        [0, 0, 1, 0, 1],
+                        [1, 0, 0, 1, 0]])
 
-    # fully connected formation
+    # Fully connected formation
     fully_conected = np.array([[0, 1, 1, 1, 1],
-                            [1, 0, 1, 1, 1],
-                            [1, 1, 0, 1, 1],
-                            [1, 1, 1, 0, 1],
-                            [1, 1, 1, 1, 0]])
+                                [1, 0, 1, 1, 1],
+                                [1, 1, 0, 1, 1],
+                                [1, 1, 1, 0, 1],
+                                [1, 1, 1, 1, 0]])
 
-    # doubly connected formation as described in question 2d
+    # Doubly connected formation as described in question 2d
     q2d = np.array([[0, 2, 1, 1, 1],
                     [2, 0, 2, 1, 1],
                     [1, 2, 0, 2, 1],
