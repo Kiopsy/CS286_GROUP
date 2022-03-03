@@ -1,8 +1,8 @@
 from logging.config import valid_ident
 import math
-import os
 import shapely
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from shapely.geometry.polygon import Polygon
 from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -192,17 +192,23 @@ def run_grid(env, iter, part, stoch):
     
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
-    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " 
-                + str(env.alpha) + ", k = " + str(step_size))
+    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " + str(env.alpha) + ", k = " + str(step_size))
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.legend(loc='upper left')
+    plt.show()
     # Save files
+<<<<<<< HEAD
     alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
     s = '../Images/Problem_1/1'  + part + '/Prob_1' + part + '_' + alpha_name + '.png'
     print(s)
     # plt.savefig(s)
     plt.show(block=False)
+=======
+    #alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
+    #fig.savefig('/home/dominicgarrity/CS286/CS286_GROUP/Coverage_and_Consensus/Images/Problem_1/1' 
+                #+ part + '/Prob_1' + part + '_' + alpha_name + '.png')
+>>>>>>> 0f1b2098424ed5c0faf00c2cf2b14107b8b1237f
 
 # Generate target points
 def target(iter):
@@ -225,7 +231,7 @@ if __name__ == "__main__":
 
     ## Create vars for easier eval--just change these according to below comment!
     # Create variable for which part of question #1 is being considered
-    part = 'E'
+    part = 'A'
     # Create variable indicating whether the system is stochastic
     stoch = True
 
