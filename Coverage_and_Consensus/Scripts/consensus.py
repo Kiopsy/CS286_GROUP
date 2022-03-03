@@ -11,7 +11,7 @@ from scipy.sparse.csgraph import laplacian
 import copy
 
 # Globals dealing with noise & adversary nodes
-add_noise = 1
+add_noise = 0
 add_adversary = 0
 
 # Nodes for storing information

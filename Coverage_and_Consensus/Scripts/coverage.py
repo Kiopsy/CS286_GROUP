@@ -1,3 +1,4 @@
+from logging.config import valid_ident
 import math
 import shapely
 import numpy as np
@@ -8,19 +9,17 @@ from scipy.stats import multivariate_normal
 
 class Robot(object):
 
-    def __init__(self, state, k=1):
+    def __init__(self, state, k=0.1):
         self._state = state     # 2-vec
         self._stoch_state = self._state + np.random.randn(2)
-        self.input = [0,0]      # movement vector later
+        self.input = [0,0]      # Movement vector
 
         self.k = k * 0.001
 
-    def update(self):     # update the robot state
-        # Below was given
-        #self._state += self.k * self.input
-        #self._stoch_state = self._state + np.random.randn(2)
-
+    def update(self):
+        # Update state (state += k * input)
         self._state = np.add(self._state, np.multiply(self.k, np.array(self.input))).tolist()
+        # Update stochastic state (stoch_state += state * + randn(2))
         self._stoch_state = np.add(np.array(self._state), np.random.randn(2)).tolist()
         self.input = [0, 0]
 
@@ -28,6 +27,7 @@ class Robot(object):
     def state(self):
         return np.array(self._state)
 
+    @property
     def stoch_state(self):
         return np.array(self._stoch_state)
 
@@ -40,12 +40,12 @@ class Environment(object):
         self.height = height
         self.res = res
 
-        # bottom left corner is 0, 0 both in pixels and in meters
-        self.robots = robots        # initialized w/ array of Robot objects
+        # Bottom left corner is 0, 0 both in pixels and in meters
+        self.robots = robots        # Initialized w/ array of Robot objects
         self.meas_func = np.zeros((len(robots)))
         self.dist = np.zeros((2, len(robots)))
 
-        # define the points you're iterating over
+        # Define the points to iterate over
         self.pointsx = np.arange(0, width, res)
         self.pointsy = np.arange(0, height, res)
 
@@ -55,18 +55,37 @@ class Environment(object):
 
         self.target = target
 
+    # Define sensing function, f
     def sensing_func(self, state, point):
         # Rename variables
         botx = state[0]
         boty = state[1]
         x = point[0]
         y = point[1]
-        # Return Euclidean distance
-        return math.sqrt((botx - x)**2 + (boty - y)**2)
+        # Calculate and return Euclidean distance
+        dist = math.sqrt((botx - x)**2 + (boty - y)**2)
+        return dist
 
-    # calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
-    # value is the value of the importance function
-    def mix_func(self, point, value=1):  
+    # Create function to handle cases in which terms are zero
+    def update_if_zero(self, val, tol):
+        if (type(val) is np.ndarray):
+            print("MODIFYING2")
+            updated_val = []
+            comparison_arr = np.isclose(val, np.zeros_like(val), rtol=tol)
+            for idx, is_zero in enumerate(list(comparison_arr)):
+                modified_val = val[idx]
+                if is_zero:
+                    modified_val = tol if val[idx] > 0 else -tol
+                updated_val.append(modified_val)
+        elif math.isclose(val, 0, rel_tol=tol):
+            print("MODIFYING2")
+            updated_val = 1 if val > 0 else -1
+        else:
+            updated_val = val
+        return updated_val
+
+    # Calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
+    def mix_func(self, point, stoch, value=1):  
         # Define initial g_alpha value 
         g_alpha = 0
         # Create list for f values so they don't need to be recalculated
@@ -74,11 +93,14 @@ class Environment(object):
         # For each robot in environment 
         for bot in self.robots:
             # Get sensing function value
-            f = self.sensing_func(bot.state, point)
-            # Append output of sensing function to f_vals before modification
+            if stoch:
+                f = self.sensing_func(bot.stoch_state, point)
+            else:
+                f = self.sensing_func(bot.state, point)
+            # Append output of sensing function to f_vals
             f_values.append(f)
+            # Raise f to the power of alpha if f is not 0
             if f != 0:
-                # Raise f to the power of alpha
                 f = f**self.alpha
             # Add modified sensing function output to g_alpha
             g_alpha += f
@@ -89,39 +111,42 @@ class Environment(object):
         for index, robot in enumerate(self.robots):
             # Calculate quotient
             quot = (f_values[index] / g_alpha)
+            # Raise quotient to power of (alpha - 1) if it is not 0
             if quot != 0:
-                # Raise quotient to power of alpha - 1
                 quot = quot**(self.alpha - 1)
-            # Covert point and robot state to numpy arrays for vector ops
+            # Covert point and robot state to numpy arrays for vector operations
             point_arr = np.array(point)
-            state_arr = np.array(robot.state)
+            if stoch:
+                state_arr = np.array(robot.stoch_state)
+            else:
+                state_arr = np.array(robot.state)
             # Find direction of motion for next iteration
             prod = np.multiply(quot, np.subtract(point_arr, state_arr))
-            # Multiply by importance value
+            # Multiply by importance value and dq
             prod = np.multiply(prod, value)
-            # Updat robot input
+            prod = np.multiply(prod, self.res)
+            # Update robot input
             robot.input = np.add(np.array(robot.input), prod).tolist()
 
 
-    def update_gradient(self, iter = 0):
-        '''
-        # Below 5 lines are for 1(B) and 1(C)
-        rv = None
-        if (type(self.target) is np.ndarray):
-            rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
-        else:
-            rv =  multivariate_normal(mean = self.target, cov = self.cov)
-        '''
-
+    def update_gradient(self, part, stoch, iter=0):
+        # Below code was given
+        # Create distributions for importance functions
+        if part != 'A' and part != 'E':
+            rv = None
+            if (type(self.target) is np.ndarray):
+                rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
+            else:
+                rv =  multivariate_normal(mean = self.target, cov = self.cov)
+        # Call mixing function for each point in Q
+        # Effectively, integrate over Q, since robot input is being changed in each iteration
         for x in self.pointsx:
             for y in self.pointsy:
                 value = 1
-                '''
-                # Below line is for 1(B)
-                value = rv.pdf((x,y))
-                '''
-
-                self.mix_func(np.array([x, y]), value)
+                if part != 'A' and part != 'E': 
+                    value = rv.pdf((x,y))
+                
+                self.mix_func(np.array([x, y]), stoch, value)
 
 
     def moves(self):
@@ -130,21 +155,20 @@ class Environment(object):
 
 
 
-# function to run the simulation
-def run_grid(env, iter):
+# Function to run the simulation
+def run_grid(env, iter, part, stoch):
     x = []
     y = []
 
 
-    # initialize state
+    # Initialize state
     for i, bot in enumerate(env.robots):
-
         x.append([bot.state[0]])
         y.append([bot.state[1]])
 
     # run environment for iterations
     for k in range(iter):
-        env.update_gradient(k)
+        env.update_gradient(part, stoch, k)
         env.moves()
 
         for i, bot in enumerate(env.robots):
@@ -154,80 +178,100 @@ def run_grid(env, iter):
         if (k % 50 == 0):
             print(k)
 
-    # set up the plot
+    # Set up the plot
     fig, ax = plt.subplots()
     points = []
 
-    # plt the robot points
+    # Plot robot points
     plt.axes(ax)
     for i in range(len(env.robots)):
-        plt.scatter(x[i], y[i], alpha=(i+1)/len(env.robots))
+        plt.scatter(x[i], y[i], alpha=max((i+1)/len(x[i]), 0.35), label='Robot '+str(i))
         points.append([x[i][-1], y[i][-1]])
     
-
-    # if there is a target setup plot it
-    if(type(env.target) is np.ndarray):
-        for i in range(env.target.shape[1]):
-            plt.scatter(env.target[0, i], env.target[1, i], alpha=(i+1)/env.target.shape[1])
-            # Adding below
-    elif len(env.target) == 0:
-        pass
-    else:
-        plt.scatter(env.target[0], env.target[1])
+    # Plot target, if there is one
+    if len(env.target) != 0:
+        plt.scatter(env.target[0], env.target[1], label='Target')
 
 
-    # set polygon bounds
+    # Set polygon bounds
     bounds = Polygon([(0,0), (10,0), (10,10), (0, 10)])
     b_x, b_y = bounds.exterior.xy
     plt.plot(b_x, b_y)        
 
-    # set Voronoi
+    # Set Voronoi
     vor = Voronoi(np.array(points))
     voronoi_plot_2d(vor, ax=ax)
     
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
-    plt.title("Robot (and Target) Positions")
+    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " + str(env.alpha))
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
+    plt.legend(loc='upper left')
     plt.show()
-    
-# generate target points
+
+# Generate target points
 def target(iter):
-
-    raise NotImplementedError
-
-if __name__ == "__main__":
-    iter = 200
-    rob1 = Robot([4, 1], 0.5)
-    rob2 = Robot([2, 2], 0.5)
-    rob3 = Robot([5, 6], 0.5)
-    rob4 = Robot([3, 4], 0.5)
-    robots = [rob1, rob2, rob3, rob4]
-    
-    # Below line is for 1(A)
-    env = Environment(10, 10, 0.1, robots)
-    
-    
-    '''
-    # Below line is for 1(B)
-    env = Environment(10, 10, 0.1, robots, target=(5,5))
-    '''
-    
-
-    '''
-    # Doing 1(C) below
     pi = np.pi
+    # Create points for range of circle function
     theta = np.linspace(0, (2 * pi) * (iter / 800), iter)
-
+    
+    # Define circle radius
     radius = 3
 
+    # Calculate coordinates
     x = radius * np.cos(theta) + 5
     y = radius * np.sin(theta) + 5
 
-    target1 = np.array([x, y])
+    return np.array([x, y])
 
-    env = Environment(10, 10, 0.1, robots, target=target1)
+
+if __name__ == "__main__":
+    iter = 200
+
+    ## Create vars for easier eval--just change these according to below comment!
+    # Create variable for which part of question #1 is being considered
+    part = 'E'
+    # Create variable indicating whether the system is stochastic
+    stoch = True
+
     '''
-
-    run_grid(env, iter)
+    Configuration for each part:
+    #1(a): part = 'A', stoch = False
+    #1(b): part = 'B', stoch = False
+    #1(c): part = 'C', stoch = False
+    #1(E): part = 'E', stoch = True
+    '''
+    # Create environments and run grid for different values of alpha
+    alpha_vals = [-0.5, -1, -5, -10]
+    if part == 'A' or part == 'E':
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha)
+            run_grid(env, iter, part, stoch)
+    elif part == 'B':
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha, target=(5,5))
+            run_grid(env, iter, part, stoch)
+    elif part == 'C':
+        for alpha in alpha_vals:
+            # Define dynamic, quarter-circle target with period 800
+            dyn_target = target(iter)
+            rob1 = Robot([4, 1], 0.5)
+            rob2 = Robot([2, 2], 0.5)
+            rob3 = Robot([5, 6], 0.5)
+            rob4 = Robot([3, 4], 0.5)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha, target=dyn_target)
+            run_grid(env, iter, part, stoch)
+    else:
+        raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
