@@ -171,7 +171,7 @@ def run_grid(env, iter, part, stoch):
     points = []
 
     # Plot robot points
-    plt.axes(ax)
+    plt.sca(ax)
     for i in range(len(env.robots)):
         plt.scatter(x[i], y[i], alpha=max((i+1)/len(x[i]), 0.35), label='Robot '+str(i))
         points.append([x[i][-1], y[i][-1]])
@@ -199,9 +199,10 @@ def run_grid(env, iter, part, stoch):
     plt.legend(loc='upper left')
     # Save files
     alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
-    plt.savefig('/home/dominicgarrity/CS286/CS286_GROUP/Coverage_and_Consensus/Images/Problem_1/1' 
-                + part + '/Prob_1' + part + '_' + alpha_name + '.png')
-    #plt.show()
+    s = '../Images/Problem_1/1'  + part + '/Prob_1' + part + '_' + alpha_name + '.png'
+    print(s)
+    # plt.savefig(s)
+    plt.show(block=False)
 
 # Generate target points
 def target(iter):
@@ -277,3 +278,5 @@ if __name__ == "__main__":
             run_grid(env, iter, part, stoch)
     else:
         raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
+    
+    plt.show()
