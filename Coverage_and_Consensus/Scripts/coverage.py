@@ -1,5 +1,6 @@
 from logging.config import valid_ident
 import math
+import os
 import shapely
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +15,7 @@ class Robot(object):
         self._stoch_state = self._state + np.random.randn(2)
         self.input = [0,0]      # Movement vector
 
-        self.k = k * 0.001
+        self.k = k 
 
     def update(self):
         # Update state (state += k * input)
@@ -65,24 +66,6 @@ class Environment(object):
         # Calculate and return Euclidean distance
         dist = math.sqrt((botx - x)**2 + (boty - y)**2)
         return dist
-
-    # Create function to handle cases in which terms are zero
-    def update_if_zero(self, val, tol):
-        if (type(val) is np.ndarray):
-            print("MODIFYING2")
-            updated_val = []
-            comparison_arr = np.isclose(val, np.zeros_like(val), rtol=tol)
-            for idx, is_zero in enumerate(list(comparison_arr)):
-                modified_val = val[idx]
-                if is_zero:
-                    modified_val = tol if val[idx] > 0 else -tol
-                updated_val.append(modified_val)
-        elif math.isclose(val, 0, rel_tol=tol):
-            print("MODIFYING2")
-            updated_val = 1 if val > 0 else -1
-        else:
-            updated_val = val
-        return updated_val
 
     # Calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
     def mix_func(self, point, stoch, value=1):  
@@ -147,6 +130,7 @@ class Environment(object):
                     value = rv.pdf((x,y))
                 
                 self.mix_func(np.array([x, y]), stoch, value)
+        print("Updating! " + str(iter))
 
 
     def moves(self):
@@ -159,12 +143,16 @@ class Environment(object):
 def run_grid(env, iter, part, stoch):
     x = []
     y = []
+    step_size = None
 
 
     # Initialize state
     for i, bot in enumerate(env.robots):
         x.append([bot.state[0]])
         y.append([bot.state[1]])
+        if i > 0 and bot.k != step_size:
+            raise ValueError("For the purposes of this assignment, please choose the same k for every robot.")
+        step_size = bot.k
 
     # run environment for iterations
     for k in range(iter):
@@ -204,11 +192,16 @@ def run_grid(env, iter, part, stoch):
     
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
-    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " + str(env.alpha))
+    plt.title("Robot and Target Positions\nf = ||q - p_i||, alpha = " 
+                + str(env.alpha) + ", k = " + str(step_size))
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.legend(loc='upper left')
-    plt.show()
+    # Save files
+    alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
+    plt.savefig('/home/dominicgarrity/CS286/CS286_GROUP/Coverage_and_Consensus/Images/Problem_1/1' 
+                + part + '/Prob_1' + part + '_' + alpha_name + '.png')
+    #plt.show()
 
 # Generate target points
 def target(iter):
@@ -227,7 +220,7 @@ def target(iter):
 
 
 if __name__ == "__main__":
-    iter = 200
+    iter = 10
 
     ## Create vars for easier eval--just change these according to below comment!
     # Create variable for which part of question #1 is being considered
@@ -244,34 +237,43 @@ if __name__ == "__main__":
     '''
     # Create environments and run grid for different values of alpha
     alpha_vals = [-0.5, -1, -5, -10]
-    if part == 'A' or part == 'E':
+    if part == 'A':
         for alpha in alpha_vals:
-            rob1 = Robot([4, 1], 0.5)
-            rob2 = Robot([2, 2], 0.5)
-            rob3 = Robot([5, 6], 0.5)
-            rob4 = Robot([3, 4], 0.5)
+            rob1 = Robot([4, 1], 0.0005)
+            rob2 = Robot([2, 2], 0.0005)
+            rob3 = Robot([5, 6], 0.0005)
+            rob4 = Robot([3, 4], 0.0005)
             robots = [rob1, rob2, rob3, rob4]
             env = Environment(10, 10, 0.1, robots, alpha)
             run_grid(env, iter, part, stoch)
     elif part == 'B':
         for alpha in alpha_vals:
-            rob1 = Robot([4, 1], 0.5)
-            rob2 = Robot([2, 2], 0.5)
-            rob3 = Robot([5, 6], 0.5)
-            rob4 = Robot([3, 4], 0.5)
+            rob1 = Robot([4, 1], 0.15)
+            rob2 = Robot([2, 2], 0.15)
+            rob3 = Robot([5, 6], 0.15)
+            rob4 = Robot([3, 4], 0.15)
             robots = [rob1, rob2, rob3, rob4]
             env = Environment(10, 10, 0.1, robots, alpha, target=(5,5))
             run_grid(env, iter, part, stoch)
     elif part == 'C':
+        # Define dynamic, quarter-circle target with period 800
+        dyn_target = target(iter)
         for alpha in alpha_vals:
-            # Define dynamic, quarter-circle target with period 800
-            dyn_target = target(iter)
-            rob1 = Robot([4, 1], 0.5)
-            rob2 = Robot([2, 2], 0.5)
-            rob3 = Robot([5, 6], 0.5)
-            rob4 = Robot([3, 4], 0.5)
+            rob1 = Robot([4, 1], 0.15)
+            rob2 = Robot([2, 2], 0.15)
+            rob3 = Robot([5, 6], 0.15)
+            rob4 = Robot([3, 4], 0.15)
             robots = [rob1, rob2, rob3, rob4]
             env = Environment(10, 10, 0.1, robots, alpha, target=dyn_target)
+            run_grid(env, iter, part, stoch)
+    elif part == 'E':
+        for alpha in alpha_vals:
+            rob1 = Robot([4, 1], 0.15)
+            rob2 = Robot([2, 2], 0.15)
+            rob3 = Robot([5, 6], 0.15)
+            rob4 = Robot([3, 4], 0.15)
+            robots = [rob1, rob2, rob3, rob4]
+            env = Environment(10, 10, 0.1, robots, alpha)
             run_grid(env, iter, part, stoch)
     else:
         raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
