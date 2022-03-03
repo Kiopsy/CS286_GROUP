@@ -4,11 +4,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+# "laplacian" is a function in the scipy library that finds the laplacian matrix of an adjacency matrix
+# It finds the laplacian matrix by calculating the degree matrix and subtracting the adjacency matrix
+from scipy.sparse.csgraph import laplacian
+# We use this library to create deepcopies of lists so we don't permenantly alter the values of the list objects
 import copy
 
 # Globals dealing with noise & adversary nodes
-add_noise = 1
-add_adversary = 0
+add_noise = 0
+add_adversary = 1
 
 # Nodes for storing information
 class Node(object):
@@ -124,12 +128,12 @@ class Graph(object):
         t = 0.1 if add_noise else 0.02
 
         # Potential consensus val
-        c = self.node_list[0].state
+        mean = sum(n.state for n in self.node_list) / len(self.node_list)
         
         at_consensus = True
         for node in self.node_list:
             # Check that each node state is within a threshold
-            if (node.state > c + t) or (node.state < c - t):
+            if (node.state > mean + t) or (node.state < mean - t):
                 at_consensus = False
         
         return at_consensus
@@ -158,25 +162,9 @@ def rand_adj(dim, p):
 
 # Return the Fiedler value to show strong connection of the array
 def fiedler(adj_mat):
-    # SOURCES
-    # Read pg 7 : https://www.math.umd.edu/~immortal/MATH401/book/ch_graph_theory.pdf
-    # Eigenvalues : https://lpsa.swarthmore.edu/MtrxVibe/EigMat/MatrixEigen.html
-    # Laplacian Matrix = Degree matrix - Adjacency Matrix
-    # https://datascience.stackexchange.com/questions/54414/how-do-i-generate-a-laplacian-matrix-for-a-graph-dataset
 
-    if False:
-        # METHOD 1 : FIND THE LAPLACIAN MATRIX FROM FINDING THE DEGREE MATRIX AND SUBTRACTING THEM
-        deg_matrix = []
-        for i in range(len(adj_mat)):
-            new_row = [0] * len(adj_mat[0])
-            new_row[i] = np.count_nonzero(adj_mat[0])
-            deg_matrix.append(new_row)
-        
-        lap_matrix = np.subtract(deg_matrix, adj_mat)
-    else:
-        # METHOD 2 : FIND THE LAPLACIAN MATRIX USING A SCIPY FUNCTION
-        from scipy.sparse.csgraph import laplacian
-        lap_matrix = laplacian(adj_mat)
+    # Find the laplacian matrix using the scipy funciton
+    lap_matrix = laplacian(adj_mat)
 
     # Get the eigenvalues of the laplacian matrix
     e_values, _ = np.linalg.eig(lap_matrix)
@@ -205,6 +193,7 @@ if __name__ == "__main__":
 
     node_list = [Node(4.0), Node(2.0), Node(-1.0), Node(3.0), Node(0.0)]
 
+    # If true, replace the last node with an adversary node
     if add_adversary:
         init_state, target, epsilon = 3.6, 0.0, 0.01
         node_list[-1] = AdversaryNode(init_state, target, epsilon)
@@ -229,13 +218,13 @@ if __name__ == "__main__":
                                 [1, 1, 0, 1, 1],
                                 [1, 1, 1, 0, 1],
                                 [1, 1, 1, 1, 0]])
-
+    
     # Doubly connected formation as described in question 2d
-    q2d = np.array([[0, 2, 1, 1, 1],
+    q2d = np.array([[0, 2, 1, 1, 2],
                     [2, 0, 2, 1, 1],
                     [1, 2, 0, 2, 1],
                     [1, 1, 2, 0, 2],
-                    [1, 1, 1, 2, 0]])
+                    [2, 1, 1, 2, 0]])
 
     matrix_list = [linear, circular, fully_conected, q2d]
     title_names = ["Linear formation graph", 
@@ -244,34 +233,123 @@ if __name__ == "__main__":
                    "Doubly connected formation graph",
                    "Randomly connected graph: p = "]
 
+    # If we added noise, run many trials to see how long it takes to reach consensus
+    if add_noise:
+
+        for i in range(3):
+            graph = Graph(copy.deepcopy(node_list), matrix_list[i])
+
+            # Track average consensus time
+            avg_consensus_time = 1
+
+            # Run 100 trials
+            for j in range(100):
+
+                # Stop if we can't reach consensus in 100 steps
+                for k in range(100):
+                    # Update the graph at each time step
+                    graph.update_graph()
+
+                    # Track the time we reach consensus in
+                    if graph.finished:
+                        avg_consensus_time += k
+                        break
+                else:
+                    avg_consensus_time += 100
+            
+            # Average it
+            avg_consensus_time /= 100
+
+            print(f"{title_names[i]} average consensus time with noise: {avg_consensus_time}")
+
+
+    test1 = np.array([[1, 0, 0, 1, 1],
+            [0, 1, 1, 1, 0],
+            [0, 1, 1, 1, 1],
+            [1, 1, 1, 1, 0],
+            [1, 0, 1, 0, 0]])
+
+
+    test2 = np.array([[0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0],
+            [1, 0, 0, 0, 0]])
+
+
+    test3 = np.array([[1, 0, 1, 0, 1],
+            [0, 0, 1, 0, 0],
+            [1, 1, 1, 0, 1],
+            [0, 0, 0, 0, 1],
+            [1, 0, 1, 1, 0]])
+
+
+    fiedler_matrices = [linear, circular, fully_conected, test1, test2, test3]
+
+    # calculate fiedler values for 6 examples
+    for i, m in enumerate(fiedler_matrices):
+        f = fiedler(m)
+        print(f"{i}) Fielder Value = {f}")
+        
+
     # Plotting graphs: linear, circular, fully and doubly connected
     for i in range(len(matrix_list)):
         graph = Graph(copy.deepcopy(node_list), matrix_list[i])
+
+        # track the node states for the graph
         node_states = [graph.node_states()]
+
         for j in range(100): 
+
+            # Update the graph at each time step
             graph.update_graph()
             node_states.append(graph.node_states())
+
+            # Stop updating if at consensus
             if graph.finished:
                 print(f"Consensus for {title_names[i]} reached at t = {j}")
                 break
 
+        # Make plot
         node_states = np.array(node_states)
         plot_states(node_states, title_names[i])
     
-    # Plotting the randomly connected graphs
+    
+
+    # 3 testing probabilities
     ps = [1/10, 1/3, 2/3]
+
+    # Plotting the randomly connected graphs
     for p in ps:
+
         nodes = copy.deepcopy(node_list)
+
+        # Track the fieldler values of the graph to make an average
+        fiedlers = []
+
+        # Track the node states of the graph to plot
         node_states = []
         for j in range(101): 
-            graph = Graph(nodes, rand_adj(len(nodes), p))
+            # Make a random adj matrix with probability p
+            adj_matrix = rand_adj(len(nodes), p)
+
+            # Make a graph with the adj matrix
+            graph = Graph(nodes, adj_matrix)
+            fiedlers.append(fiedler(adj_matrix))
             node_states.append(graph.node_states())
+
+            # Update the graph at each time step
             graph.update_graph()
+
             nodes = copy.deepcopy(graph.node_list)
+
+            # Stop if consensus is reached
             if graph.finished:
                 print(f"Consensus for {title_names[-1]}{p:.2f} reached at t = {j}")
                 break
-            
+        
+        # Make plot and calculate average fiedler value
         node_states = np.array(node_states)
         plot_states(node_states, "{}{:.2f}".format(title_names[-1], p))
+        print(f"Avg fiedler: {sum(fiedlers)/len(fiedlers)}")
  
