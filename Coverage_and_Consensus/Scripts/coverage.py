@@ -231,9 +231,9 @@ if __name__ == "__main__":
 
     ## Create vars for easier eval--just change these according to below comment!
     # Create variable for which part of question #1 is being considered
-    part = 'B'
+    part = 'E'
     # Create variable indicating whether the system is stochastic
-    stoch = False
+    stoch = True
 
     '''
     Configuration for each part:
@@ -263,15 +263,15 @@ if __name__ == "__main__":
             env = Environment(10, 10, 0.1, robots, alpha, target=(5,5))
             run_grid(env, iter, part, stoch)
     elif part == 'C':
-        # Define dynamic, quarter-circle target with period 800
-        dyn_target = target(iter)
         for alpha in alpha_vals:
+            # Define dynamic, quarter-circle target with period 800
+            dyn_target = target(iter)
             rob1 = Robot([4, 1], 0.5)
             rob2 = Robot([2, 2], 0.5)
             rob3 = Robot([5, 6], 0.5)
             rob4 = Robot([3, 4], 0.5)
             robots = [rob1, rob2, rob3, rob4]
-            env = Environment(10, 10, 0.1, robots, target=dyn_target)
+            env = Environment(10, 10, 0.1, robots, alpha, target=dyn_target)
             run_grid(env, iter, part, stoch)
     else:
         raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
