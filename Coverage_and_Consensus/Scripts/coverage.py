@@ -220,7 +220,7 @@ def target(iter):
 
 
 if __name__ == "__main__":
-    iter = 10
+    iter = 200
 
     ## Create vars for easier eval--just change these according to below comment!
     # Create variable for which part of question #1 is being considered
