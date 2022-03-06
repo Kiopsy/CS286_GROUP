@@ -51,7 +51,11 @@ class Environment(object):
         self.alpha = alpha # "free parameter" from Schwager et al., Section 2.2
 
     def define_rho(self):
-        raise NotImplementedError
+        # From paper [1]
+        # rho(q) = rho_1(q) + rho_2(q) = ... for all the clients
+
+        for client in self.clients:
+            
 
     def sample_alphas(self, spoof_mean, legit_mean):
         # create local variable here to note which clients are spoofers!
