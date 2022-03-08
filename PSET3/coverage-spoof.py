@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry.polygon import Polygon
@@ -50,11 +51,25 @@ class Environment(object):
 
         self.alpha = alpha # "free parameter" from Schwager et al., Section 2.2
 
-    def define_rho(self):
+    def define_rho(self, point, robot_pos, alpha = 1):
         # From paper [1]
         # rho(q) = rho_1(q) + rho_2(q) = ... for all the clients
-
-        for client in self.clients:
+        # 9.3
+        # Notes: Added the alpha argument here and commented the env.define_rho() in run_grid()
+        # Convert to numpy arrays
+        point = np.matrix(point)
+        robot_pos = np.matrix(robot_pos)
+        # Compute first diff vector
+        diff = np.subtract(point, robot_pos)
+        print(diff)
+        # Transpose diff vector
+        #diff_T = diff[:,None]
+        diff_T = diff.T
+        print(diff_T)
+        # Computer errorr
+        mat_prod = np.multiply(diff_T, diff)
+        print(mat_prod)
+        return alpha * math.exp((-0.5) * mat_prod)
             
 
     def sample_alphas(self, spoof_mean, legit_mean):
@@ -62,7 +77,7 @@ class Environment(object):
         
         raise NotImplementedError
 
-    def mix_func(self, point, value = 1):     
+    def mix_func(self, point):     
         # calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
         for i, bot in enumerate(self.servers):
             self.dist[:, i] = point - bot.state
@@ -72,12 +87,13 @@ class Environment(object):
 
         for i, bot in enumerate(self.servers):
             if(self.meas_func[i] > 0):
+                value = self.define_rho(point, bot.state)
                 bot.input += (self.meas_func[i] / mixing)**(self.alpha - 1) * self.dist[:, i] * value
 
     def update_gradient(self):
         for i in self.pointsx:
             for j in self.pointsy:
-                self.mix_func(np.array([i, j]), 1)
+                self.mix_func(np.array([i, j]))
 
     def moves(self):
         for bot in self.servers:
@@ -96,7 +112,7 @@ def run_grid(env, iter):
     plt.plot(b_x, b_y)        
 
     # initialize state
-    env.define_rho()
+    #env.define_rho()
 
     for i, bot in enumerate(env.servers):
         x.append([bot.state[0]])
@@ -104,7 +120,7 @@ def run_grid(env, iter):
 
     # run environment for iterations
     for k in range(iter):
-        env.sample_alphas(env.spoof_mean, env.legit_mean)
+        #env.sample_alphas(env.spoof_mean, env.legit_mean)
         env.update_gradient()
         env.moves()
 
@@ -146,8 +162,8 @@ if __name__ == "__main__":
 
     serv1 = Server([4, 1])
     serv2 = Server([2, 2])
-    # serv3 = Server([5, 6])
-    # serv4 = Server([3, 4])
+    serv3 = Server([5, 6])
+    serv4 = Server([3, 4])
     servers = [serv1, serv2, serv3, serv4]
 
     client1 = Client([3,3], True)
