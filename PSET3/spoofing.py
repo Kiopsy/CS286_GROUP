@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,12 +15,13 @@ class AlphaWeights(object):
         self.means = mean_alpha
         self.betas = self.means + np.random.randn(self.means.shape[0], self.means.shape[1]) * self.std
 
-    # Calculate the updates fo the betas used in updating W
+    # Calculate the updates for the betas used in updating W
     # be sure to cap alpha at -0.5 and 0.5 at all times
     # this function should generate a random set of alphas based on the means and then update beta accordingly
     def update_betas(self):
 
         alpha = self.means + np.random.randn(self.means.shape[0], self.means.shape[1]) * self.std
+
 
         # cap alphas at 0.5 because thats the way it is
         thresh = alpha > 0.5
@@ -62,8 +64,19 @@ class Environment(object):
     # call alphaweights to get an updated beta, then use that to update W.
     # the code will call update to progress the simulation
     def transition_W(self, alphaweights):
+        betas = alphaweights.betas
 
-        raise NotImplementedError
+        for i in range(self.W.shape[0]):
+            for j in range(self.W.shape[1]):
+                if betas[i][j] >= 0:
+                    self.W[i][j] = (1/self.leg_len)*(1 - math.exp(-betas[i][j] / 2))
+                else:
+                    self.W[i][j] = (1/(2*self.leg_len))*(math.exp(betas[i][j]))
+
+        # Changing when i == j
+        for i in range(self.W.shape[0]):
+            self.W[i][i] = 1 - (np.sum(self.W[i]))
+
 
 # it plots the states - basically the same function from HW 2
 def plot_states(node_states):
@@ -87,22 +100,29 @@ def plot_states(node_states):
 if __name__ == "__main__":
 
     # assume everything is in 1-D and fully connected
-    leg = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2,1,2,1,2,1,0.5,0.8,1.5,1,2,1,2])
+    leg = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
     spoof = np.array([4, 4, 4, 4])
 
     # Setting up a new matrix of inputs for the dynamics
     alphas = np.ones((leg.shape[0] + spoof.shape[0], leg.shape[0] + spoof.shape[0]))
+    print(alphas)
     alphas = 0.4 * alphas
     alphas[:, -spoof.shape[0]:] = -1 * alphas[:, -spoof.shape[0]:] 
 
+    # print(alphas)
     alphas = AlphaWeights(alphas)
 
+    print(len(alphas.betas))
+
     theta = np.zeros((spoof.shape[0], leg.shape[0]))
+    # print(theta)
     omega = np.eye(spoof.shape[0])
+    # print(omega)
 
     # Define the environment
     env = Environment(leg, spoof, theta, omega)
 
+    # print(env.W)
     iter = 200
 
     # Run the simulation and plot
