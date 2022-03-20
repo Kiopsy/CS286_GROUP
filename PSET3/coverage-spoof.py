@@ -51,35 +51,55 @@ class Environment(object):
         self.pointsy = np.arange(0, height, res)
 
         self.alpha = alpha # "free parameter" from Schwager et al., Section 2.2
+        self.importance = np.zeros((height, width))
 
-    def define_rho(self, point, robot_pos, alpha = 1):
+
+    def define_rho(self):
         # From paper [1]
         # rho(q) = rho_1(q) + rho_2(q) = ... for all the clients
         # 9.3
-        # Notes: Added the alpha argument here and commented the env.define_rho() in run_grid()
-        # Convert to numpy arrays
-        point = np.array(point)
-        robot_pos = np.array(robot_pos)
-        # Compute first diff vector
-        diff = np.subtract(point, robot_pos)
-        # Transpose diff vector
-        #diff_T = diff[:,None]
-        diff_T = np.transpose(diff)
-        # Computer errorr
-        mat_prod = np.dot(diff_T, diff)
-        return alpha * math.exp((-0.5) * mat_prod)
-            
+        # Create matrix for collective importance map
+        imp_vals = np.zeros((len(self.pointsx), len(self.pointsy)))
+        for client in self.clients:
+            client_imp_vals = np.zeros_like(imp_vals)
+            for i, x in enumerate(self.pointsx):
+                for j, y in enumerate(self.pointsy):
+                    # Compute importance for each point in environment
+                    imp = 0
+                    point = np.array([x, y])
+                    client_pos = np.array(client.state)
+                    client_pos = np.array(client_pos)
+                    # Compute first diff vector
+                    diff = np.subtract(point, client_pos)
+                    # Transpose diff vector
+                    #diff_T = diff[:,None]
+                    diff_T = np.transpose(diff)
+                    # Compute error
+                    mat_prod = np.dot(diff_T, diff)
+                    imp += math.exp((-0.5) * mat_prod)
+                    # Add to client-specific importance map
+                    client_imp_vals[i, j] += imp
+            # Set client rho
+            client.rho = client_imp_vals 
+            if client.alpha is not None:
+                client.rho *= client.alpha
+            # Add to collective importance map
+            imp_vals = np.add(imp_vals, client_imp_vals)
+        # Store in environment
+        self.importance = imp_vals
+
 
     def sample_alphas(self, spoof_mean, legit_mean):
         # create local variable here to note which clients are spoofers!
         # sample from normal dist, mess around with variance
-        if ():
-            rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
-        else:
-            rv =  multivariate_normal(mean = self.target, cov = self.cov)
-        raise NotImplementedError
+        for client in self.clients:
+            if (client.spoofer):
+                rv =  np.random.normal(loc=spoof_mean, scale=0.05)
+            else:
+                rv =  np.random.normal(loc=legit_mean, scale=0.05)
+            client.alpha = rv
 
-    def mix_func(self, point):     
+    def mix_func(self, point, value = 1):     
         # calc the mixing function for the function aka g_alpha, also record f(p, q) and dist, point is np.array([x,y])
         for i, bot in enumerate(self.servers):
             self.dist[:, i] = point - bot.state
@@ -89,13 +109,13 @@ class Environment(object):
 
         for i, bot in enumerate(self.servers):
             if(self.meas_func[i] > 0):
-                value = self.define_rho(point, bot.state)
                 bot.input += (self.meas_func[i] / mixing)**(self.alpha - 1) * self.dist[:, i] * value
 
     def update_gradient(self):
-        for i in self.pointsx:
-            for j in self.pointsy:
-                self.mix_func(np.array([i, j]))
+        env.define_rho()
+        for i, x in enumerate(self.pointsx):
+            for j, y in enumerate(self.pointsy):
+                self.mix_func(np.array([x, y]), self.importance[i, j])
 
     def moves(self):
         for bot in self.servers:
@@ -114,7 +134,7 @@ def run_grid(env, iter):
     plt.plot(b_x, b_y)        
 
     # initialize state
-    #env.define_rho()
+    env.define_rho()
 
     for i, bot in enumerate(env.servers):
         x.append([bot.state[0]])
@@ -122,14 +142,14 @@ def run_grid(env, iter):
 
     # run environment for iterations
     for k in range(iter):
-        #env.sample_alphas(env.spoof_mean, env.legit_mean)
+        env.sample_alphas(env.spoof_mean, env.legit_mean)
         env.update_gradient()
         env.moves()
 
         for i, bot in enumerate(env.servers):
             x[i].append(bot.state[0])
             y[i].append(bot.state[1])
-
+            
         if (k % 50 == 0):
             print(k)
 
