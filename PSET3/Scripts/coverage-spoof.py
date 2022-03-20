@@ -239,7 +239,7 @@ if __name__ == "__main__":
     clients = [client1, client2, client3, client4]
 
     # Define variables for easier eval--just change these according to below comment!
-    part = "B" # part of question #1 to be considered
+    part = "Eii" # part of question #1 to be considered
     num_iter = 200 # number of iterations
 
     '''
