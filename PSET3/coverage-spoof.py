@@ -131,19 +131,23 @@ def run_grid(env, iter):
     # set up the plot
     fig, ax = plt.subplots()
     points = []
+    legend_alphas = []
 
     # plt the server points
     plt.axes(ax)
     for i in range(len(env.servers)):
-        plt.scatter(x[i], y[i], alpha=(i+1)/len(env.servers))
+        plt.scatter(x[i], y[i], alpha=max((i+1)/len(x[i]), 0.25), label='Server '+str(i))
         points.append([x[i][-1], y[i][-1]])
+        legend_alphas.append(1)
 
     # plot the client points
-    for c in env.clients:
+    for j, c in enumerate(env.clients):
         if c.spoofer:
-            plt.scatter(c.state[0], c.state[1], alpha=0.1)
+            plt.scatter(c.state[0], c.state[1], alpha=0.1, label="Client "+str(j))
+            legend_alphas.append(0.1)
         else:
-            plt.scatter(c.state[0], c.state[1], alpha=0.9)
+            plt.scatter(c.state[0], c.state[1], alpha=0.9, label="Client "+str(j))
+            legend_alphas.append(0.9)
 
     # set Voronoi
     # vor = Voronoi(np.array(points))
@@ -152,6 +156,12 @@ def run_grid(env, iter):
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
 
+    plt.title("Server and Client Positions")
+    plt.xlabel("X Position")
+    plt.ylabel("Y Position")
+    leg = plt.legend(loc='upper left')
+    for idx, lh in enumerate(leg.legendHandles): 
+        lh.set_alpha(legend_alphas[idx])
 
     plt.show()
 
@@ -171,4 +181,4 @@ if __name__ == "__main__":
 
     env = Environment(10, 10, 0.1, servers, clients)
 
-    run_grid(env, 5)
+    run_grid(env, 20)
