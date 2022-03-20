@@ -51,8 +51,7 @@ class Environment(object):
         self.pointsy = np.arange(0, height, res)
 
         self.alpha = alpha # "free parameter" from Schwager et al., Section 2.2
-        self.importance = np.zeros((height, width))
-
+        self.importance = np.zeros((len(self.pointsx), len(self.pointsy)))
 
     def define_rho(self):
         # From paper [1]
@@ -124,7 +123,7 @@ class Environment(object):
 
 
 # function to run the simulation
-def run_grid(env, iter):
+def run_grid(env, iter, part):
     x = []
     y = []
 
@@ -142,7 +141,8 @@ def run_grid(env, iter):
 
     # run environment for iterations
     for k in range(iter):
-        env.sample_alphas(env.spoof_mean, env.legit_mean)
+        if part != "B":
+            env.sample_alphas(env.spoof_mean, env.legit_mean)
         env.update_gradient()
         env.moves()
 
@@ -181,12 +181,28 @@ def run_grid(env, iter):
     ax.set_xlim((-1, 11))
     ax.set_ylim((-1, 11))
 
-    plt.title("Server and Client Positions")
+    if part == "B":
+        plt.title("Server and Client Positions\n(Not Alpha-Modified)")
+    else:
+        plt.title("Server and Client Positions\nSpoofer Mean = " + str(env.spoof_mean) + ", Legit Mean = " + str(env.legit_mean))
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     leg = plt.legend(loc='upper left')
     for idx, lh in enumerate(leg.legendHandles): 
         lh.set_alpha(legend_alphas[idx])
+
+    # Plot importance function
+    f = plt.figure()
+    ax1 = plt.axes(projection='3d')
+    x = env.pointsx
+    y = env.pointsy
+    Y, X = np.meshgrid(x, y)
+    ax1.plot_surface(X, Y, env.importance, rstride=1, cstride=1,
+            cmap='viridis', edgecolor='none')
+    ax1.set_title('Importance Function')
+    ax1.set_xlabel("X Position")
+    ax1.set_ylabel("Y Position")
+    ax1.set_zlabel("Importance")
 
     plt.show()
 
@@ -204,6 +220,18 @@ if __name__ == "__main__":
     client4 = Client([8,3], True)
     clients = [client1, client2, client3, client4]
 
-    env = Environment(10, 10, 0.1, servers, clients)
+    part = "Eii"
+    if part == "B":
+        env = Environment(10, 10, 0.1, servers, clients)
+    elif part == "D":
+        env = Environment(10, 10, 0.1, servers, clients, 0.2, 0.8)
+    elif part == "Ei1":
+        env = Environment(10, 10, 0.1, servers, clients, 0.01, 0.99)
+    elif part == "Ei2":
+        env = Environment(10, 10, 0.1, servers, clients, 0.99, 0.01)
+    elif part == "Eii":
+        env = Environment(10, 10, 0.1, servers, clients, 0.5, 0.5)
+    else:
+        raise ValueError("part can only equal 'B', 'D', 'Ei1', 'Ei2', or 'Eii'")
 
-    run_grid(env,200 )
+    run_grid(env, 10, part)
