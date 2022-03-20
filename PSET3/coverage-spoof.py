@@ -206,4 +206,4 @@ if __name__ == "__main__":
 
     env = Environment(10, 10, 0.1, servers, clients)
 
-    run_grid(env, 200)
+    run_grid(env,200 )
