@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry.polygon import Polygon
 from scipy.spatial import Voronoi, voronoi_plot_2d
+from scipy.stats import multivariate_normal
 
 class Server(object):
 
@@ -72,6 +73,10 @@ class Environment(object):
     def sample_alphas(self, spoof_mean, legit_mean):
         # create local variable here to note which clients are spoofers!
         # sample from normal dist, mess around with variance
+        if ():
+            rv =  multivariate_normal(mean = self.target[:, iter], cov = self.cov)
+        else:
+            rv =  multivariate_normal(mean = self.target, cov = self.cov)
         raise NotImplementedError
 
     def mix_func(self, point):     
