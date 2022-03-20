@@ -57,24 +57,21 @@ class Environment(object):
         # 9.3
         # Notes: Added the alpha argument here and commented the env.define_rho() in run_grid()
         # Convert to numpy arrays
-        point = np.matrix(point)
-        robot_pos = np.matrix(robot_pos)
+        point = np.array(point)
+        robot_pos = np.array(robot_pos)
         # Compute first diff vector
         diff = np.subtract(point, robot_pos)
-        print(diff)
         # Transpose diff vector
         #diff_T = diff[:,None]
-        diff_T = diff.T
-        print(diff_T)
+        diff_T = np.transpose(diff)
         # Computer errorr
-        mat_prod = np.multiply(diff_T, diff)
-        print(mat_prod)
+        mat_prod = np.dot(diff_T, diff)
         return alpha * math.exp((-0.5) * mat_prod)
             
 
     def sample_alphas(self, spoof_mean, legit_mean):
         # create local variable here to note which clients are spoofers!
-        
+        # sample from normal dist, mess around with variance
         raise NotImplementedError
 
     def mix_func(self, point):     
