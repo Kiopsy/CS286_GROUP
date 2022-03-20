@@ -130,12 +130,7 @@ class Environment(object):
 # Function to run the simulation
 def run_grid(env, iter, part):
     x = []
-    y = []
-
-    # Set polygon bounds
-    bounds = Polygon([(0,0), (10,0), (10,10), (0, 10)])
-    b_x, b_y = bounds.exterior.xy
-    #plt.plot(b_x, b_y)        
+    y = []       
 
     # Initialize state
     env.define_rho()
@@ -164,6 +159,11 @@ def run_grid(env, iter, part):
     points = []
     # Define list for transparency vals in legend
     legend_alphas = []
+
+    # Set polygon bounds
+    bounds = Polygon([(0,0), (10,0), (10,10), (0, 10)])
+    b_x, b_y = bounds.exterior.xy
+    plt.plot(b_x, b_y) 
 
     # Plot the server points in first figure
     plt.axes(ax1)
