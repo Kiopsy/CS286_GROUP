@@ -51,7 +51,7 @@ class Environment(object):
         self.pointsy = np.arange(0, height, res)
 
         self.alpha = alpha # "free parameter" from Schwager et al., Section 2.2
-        self.importance = np.zeros((len(self.pointsx), len(self.pointsy)))
+        self.importance = np.zeros((len(self.pointsx), len(self.pointsy))) # new variable for importance map
 
     def define_rho(self):
         # Create matrix for collective importance map
@@ -114,7 +114,7 @@ class Environment(object):
                 bot.input += (self.meas_func[i] / mixing)**(self.alpha - 1) * self.dist[:, i] * value
 
     def update_gradient(self):
-        # Redefine rho in case alpha values have been sampled
+        # Re-define rho in case alpha values have been sampled
         env.define_rho()
         for i, x in enumerate(self.pointsx):
             for j, y in enumerate(self.pointsy):
@@ -185,6 +185,7 @@ def run_grid(env, iter, part):
     # vor = Voronoi(np.array(points))
     # voronoi_plot_2d(vor, show_vertices = False, line_colors='blue', ax=ax)
     
+    # Set limits
     ax1.set_xlim((-1, 11))
     ax1.set_ylim((-1, 11))
 
@@ -210,6 +211,7 @@ def run_grid(env, iter, part):
     Y, X = np.meshgrid(x, y)
     ax2.plot_surface(X, Y, env.importance, rstride=1, cstride=1,
             cmap='viridis', edgecolor='none')
+
     # Beautify second figure
     if part == "B":
         plt.title("Importance Function\nIters = " + str(iter) + ", Not Alpha-Modified")
@@ -249,6 +251,9 @@ if __name__ == "__main__":
     #1(Ei, test 1): part = 'Ei1', num_iter = 200
     #1(Ei, test 2): part = 'Ei2', num_iter = 200
     #1(Eii): part = 'Eii', num_iter = 200
+
+    Note: You will have to change the file path in, or comment out, 
+    the fig1.savefig() and fig2.savefig() lines
     '''
 
     # Define environment
