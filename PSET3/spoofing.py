@@ -3,10 +3,8 @@ from tempfile import SpooledTemporaryFile
 import numpy as np
 import matplotlib.pyplot as plt
 
-import math
-
 # Run experiments for different questions:
-question = "2d"
+question = "2ei"
 
 run_question = {
     "2a" : False,
@@ -84,14 +82,8 @@ class Environment(object):
         self.leg = np.matmul(self.W, np.concatenate((self.leg, self.spoof), axis=0))
         self.spoof = np.matmul(self.Theta, self.leg) + np.matmul(self.Omega, self.spoof)
 
-        def sin_func(x):
-            B = np.pi * 2 / 50
-            C = B / 4
-            D = 4
-            return  math.sin(B*(x + C)) + D
-
         if run_question["2ei"]:
-            self.spoof.fill(sin_func(self.iter))
+            self.spoof.fill(sin_positions[self.iter])
         
         self.iter += 1
 
@@ -142,16 +134,12 @@ def run(leg, spoof, **kwargs):
     alphas = 0.4 * alphas
     alphas[:, -spoof.shape[0]:] = -1 * alphas[:, -spoof.shape[0]:] 
 
-
     alphas = AlphaWeights(alphas)
-
 
     theta = np.zeros((spoof.shape[0], leg.shape[0]))
 
-
     # Sets the spoof transition function to account for the exponential case in 2e
     omega = np.eye(spoof.shape[0]) * 1.01 if run_question["2eii"] else np.eye(spoof.shape[0]) 
-
 
     # Define the environment
     env = Environment(leg, spoof, theta, omega)
@@ -160,12 +148,9 @@ def run(leg, spoof, **kwargs):
     iter = 200
 
     # Sine values
-    # y = sin(2pi/50 (x + 2pi/200)) + 4
-    # def sin_func(x):
-    #     B = np.pi * 2 / 50
-    #     C = B / 4
-    #     D = 4
-    #     return  np.sin(B(x + C)) + D
+    step = 2 * np.pi / 50
+    inputs = np.arange(0, iter*step, step)
+    sin_values = np.sin(inputs) + 4
 
     # inputs = np.arange(0, iter)
     # theta = 2 * np.pi
@@ -187,7 +172,7 @@ def run(leg, spoof, **kwargs):
     for i in range(iter):
         alphas.update_betas()
         env.transition_W(alphas)        # update W at every iteration
-        env.update()
+        env.update(sin_values)
 
         # spoof_states.append(env.spoof)
         spoof_states.append(np.array(env.spoof.tolist()))
