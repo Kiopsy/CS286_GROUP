@@ -3,7 +3,7 @@ from tempfile import SpooledTemporaryFile
 import numpy as np
 import matplotlib.pyplot as plt
 
-# For part 2e.
+# Question 2e
 sine = False
 exponential = True
 
@@ -69,9 +69,6 @@ class Environment(object):
         if sine:
             self.spoof.fill(sin_positions[self.iter])
             self.iter += 1
-        # elif exponential:
-            
-
 
     # set the transitions of W
     # call alphaweights to get an updated beta, then use that to update W.
@@ -109,16 +106,8 @@ def plot_states(node_states):
     plt.legend()
     plt.show()
 
-
-if __name__ == "__main__":
-
-    # assume everything is in 1-D and fully connected
-    leg = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
-    spoof = np.array([4, 4, 4, 4])
-
-    # Create the different plots here:
-    # TODO
-
+def run(leg, spoof, question=None):
+    
     # Setting up a new matrix of inputs for the dynamics
     alphas = np.ones((leg.shape[0] + spoof.shape[0], leg.shape[0] + spoof.shape[0]))
     alphas = 0.4 * alphas
@@ -159,3 +148,32 @@ if __name__ == "__main__":
     plot_states(np.array(leg_states))
 
     print("out")
+
+
+if __name__ == "__main__":
+
+    # assume everything is in 1-D and fully connected
+    leg = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
+    spoof = np.array([4, 4, 4, 4])
+
+    # Question 2b
+    if False:
+        standard_deviations = [0.1, 1, 3, 5]
+        mean = 1.5
+        for std in standard_deviations:
+            leg_2b = mean + std * np.random.randn(20)
+
+    # Question 2c
+    leg_2c = 1.5 + 1 * np.random.randn(20)
+    for x in range(2, 8, 2):
+        spoof_2c = np.array([x] * 4)
+
+    # Question 2d
+    #       Testing the following # of spoofers: 6, 8, 10, 14
+    f = [4]
+    spoof = np.array(f * 6)
+    spoof1 = np.array(f * 8)
+    spoof2 = np.array(f * 10)
+    spoof3 = np.array(f * 14)
+
+    run(leg, spoof)
