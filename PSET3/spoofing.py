@@ -6,17 +6,12 @@ import matplotlib.pyplot as plt
 # Run experiments for different questions:
 question = "2ei"
 
-run_question = {
-    "2a" : False,
-    "2b" : False,
-    "2c" : False,
-    "2d" : False,
-    "2ei" : False,
-    "2eii" : False
-}
+run_question = dict()
+
+Qs = ["2a", "2b", "2c", "2d", "2ei", "2eii"]
 
 def answer_question(question):
-    for key in run_question.keys():
+    for key in Qs:
         run_question[key] = False
     run_question[question] = True
 
