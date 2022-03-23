@@ -198,17 +198,9 @@ def run_grid(env, iter, part, stoch):
     plt.legend(loc='upper left')
     plt.show()
     # Save files
-<<<<<<< HEAD
-    alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
-    s = '../Images/Problem_1/1'  + part + '/Prob_1' + part + '_' + alpha_name + '.png'
-    print(s)
-    # plt.savefig(s)
-    plt.show(block=False)
-=======
     #alpha_name = str(alpha) if isinstance(alpha, int) else str(alpha).replace(".", "-")
     #fig.savefig('/home/dominicgarrity/CS286/CS286_GROUP/Coverage_and_Consensus/Images/Problem_1/1' 
                 #+ part + '/Prob_1' + part + '_' + alpha_name + '.png')
->>>>>>> 0f1b2098424ed5c0faf00c2cf2b14107b8b1237f
 
 # Generate target points
 def target(iter):

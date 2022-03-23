@@ -54,8 +54,13 @@ class Environment(object):
         # From paper [1]
         # rho(q) = rho_1(q) + rho_2(q) = ... for all the clients
 
+        # NOTE: Get this checked
+
+        rho = 0
         for client in self.clients:
-            
+            rho += client.rho
+        
+        return rho
 
     def sample_alphas(self, spoof_mean, legit_mean):
         # create local variable here to note which clients are spoofers!
