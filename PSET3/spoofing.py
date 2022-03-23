@@ -19,7 +19,7 @@ run_question = {
 
 # Set corresponding question value to True
 def answer_question(question):
-    for key in run_question.keys():
+    for key in Qs:
         run_question[key] = False
     run_question[question] = True
 
