@@ -3,6 +3,14 @@ from tempfile import SpooledTemporaryFile
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Run experiments for different questions:
+run = {
+    "2a" : False,
+    "2b" : False,
+    "2c" : False,
+    "2d" : False,
+}
+
 # Question 2e
 sine = False
 exponential = True
@@ -153,27 +161,33 @@ def run(leg, spoof, question=None):
 if __name__ == "__main__":
 
     # assume everything is in 1-D and fully connected
-    leg = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
     spoof = np.array([4, 4, 4, 4])
 
+    if run["2a"]:
+        leg_2a = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
+        run(leg_2a, spoof)
+
+    # legitimate nodes with mean of 1.5 and st.d of 1
+    leg = 1.5 + 1 * np.random.randn(20)
+
     # Question 2b
-    if False:
+    if run["2b"]:
         standard_deviations = [0.1, 1, 3, 5]
-        mean = 1.5
         for std in standard_deviations:
-            leg_2b = mean + std * np.random.randn(20)
+            # Create varoius legitmate node lists with mean = 1.5 and varying st. d
+            leg_2b = 1.5 + std * np.random.randn(20)
+            run(leg_2b, spoof)
 
     # Question 2c
-    leg_2c = 1.5 + 1 * np.random.randn(20)
-    for x in range(2, 8, 2):
-        spoof_2c = np.array([x] * 4)
+    if run["2c"]:
+        for x in range(2, 8, 2):
+            # Create spoofs with different spoof values
+            spoof_2c = np.array([x] * 4)
+            run(leg, spoof_2c)
 
     # Question 2d
     #       Testing the following # of spoofers: 6, 8, 10, 14
-    f = [4]
-    spoof = np.array(f * 6)
-    spoof1 = np.array(f * 8)
-    spoof2 = np.array(f * 10)
-    spoof3 = np.array(f * 14)
-
-    run(leg, spoof)
+    if run["2d"]:
+        for extra in [6, 8, 10, 14]:
+            spoof_2d = np.array([4] * extra)
+            run(leg, spoof_2d)
