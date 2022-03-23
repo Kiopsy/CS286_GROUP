@@ -171,7 +171,7 @@ def run_grid(env, iter, part, stoch):
     points = []
 
     # Plot robot points
-    plt.axes(ax)
+    plt.sca(ax)
     for i in range(len(env.robots)):
         plt.scatter(x[i], y[i], alpha=max((i+1)/len(x[i]), 0.35), label='Robot '+str(i))
         points.append([x[i][-1], y[i][-1]])
@@ -276,3 +276,5 @@ if __name__ == "__main__":
             run_grid(env, iter, part, stoch)
     else:
         raise ValueError("The 'part' variable can only take the value A, B, C, or E.")
+    
+    plt.show()

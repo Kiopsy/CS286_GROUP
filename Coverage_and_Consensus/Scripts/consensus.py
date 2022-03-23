@@ -324,9 +324,6 @@ if __name__ == "__main__":
 
         nodes = copy.deepcopy(node_list)
 
-        # Track the fieldler values of the graph to make an average
-        fiedlers = []
-
         # Track the node states of the graph to plot
         node_states = []
         for j in range(101): 
@@ -335,7 +332,6 @@ if __name__ == "__main__":
 
             # Make a graph with the adj matrix
             graph = Graph(nodes, adj_matrix)
-            fiedlers.append(fiedler(adj_matrix))
             node_states.append(graph.node_states())
 
             # Update the graph at each time step
@@ -351,4 +347,3 @@ if __name__ == "__main__":
         # Make plot and calculate average fiedler value
         node_states = np.array(node_states)
         plot_states(node_states, "{}{:.2f}".format(title_names[-1], p))
-        print(f"Avg fiedler: {sum(fiedlers)/len(fiedlers)}")
