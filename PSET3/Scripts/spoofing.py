@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 Qs = ["2a", "2b", "2c", "2d", "2ei", "2eii"]
 
 # NOTE: Change this string to any of the question options above
-question = "2a"
+question = "2b"
 
 # Function for switching between which question to answer (not relevant to answers)
 run_question = dict()
@@ -204,7 +204,7 @@ def run(leg, spoof, **kwargs):
             print(f"Reached consensus of {val} at timestep {i}")
             never_reached_consensus = False
             consensus = ([i], [val])
-            
+
         spoof_states.append(np.array(env.spoof.tolist()))
         leg_states.append(env.leg)
 
