@@ -1,4 +1,5 @@
 import math
+from re import I
 from tempfile import SpooledTemporaryFile
 import numpy as np
 import matplotlib.pyplot as plt
@@ -100,6 +101,20 @@ class Environment(object):
             self.W[i][i] += 1 - (np.sum(self.W[i]))
 
 
+    def reached_consensus(self):
+        t = .2
+
+        # Potential consensus value
+        mean = np.sum(self.leg)
+
+        at_consensus = True
+        for node in self.leg:
+            if (node > mean + t) or (node < mean - t):
+                at_consensus = False
+        
+        return at_consensus, mean
+
+
 # it plots the states - basically the same function from HW 2
 def plot_states(node_states, spoof_node_states, title = None):
 
@@ -110,16 +125,16 @@ def plot_states(node_states, spoof_node_states, title = None):
     # Plot state of legitimate nodes
     for i in range(node_states.shape[1]):
         line, = ax.plot(steps, node_states[:, i], 'c')
-    line.set_label(f'States of the {node_states.shape[1]} legitimate nodes')
+    line.set_label(f'Legit States')
 
     # Plot state of spoof nodes
     for i in range(spoof_node_states.shape[1]):
         line, = ax.plot(steps, spoof_node_states[:, i], ':r')
-    line.set_label(f'States of the {spoof_node_states.shape[1]} spoof nodes')
+    line.set_label(f'Spoof States')
 
     # Plot the average state
     line, = ax.plot(steps, np.ones(len(steps)) * np.average(node_states[0, :]), '--')
-    line.set_label("Average state of legitmate nodes")
+    line.set_label("Average of Legit States")
 
     # print average states
     initial_avg = np.average(node_states[0, :])
@@ -153,7 +168,7 @@ def run(leg, spoof, **kwargs):
     env = Environment(leg, spoof, theta, omega)
 
     # Changed from 200 iterations for better graphs
-    iter = 50
+    iter = 50 if run_question["2eii"] or run_question["2ei"] else 25
 
     # Sin values for 2e i
     step = 2 * np.pi / 50
@@ -167,12 +182,18 @@ def run(leg, spoof, **kwargs):
     leg_states.append(env.leg)
     spoof_states.append(np.array(env.spoof.tolist()))
 
+    never_reached_consensus = True
+
     # update and store states over the 'iter' iterations
-    for _ in range(iter):
+    for i in range(iter):
         alphas.update_betas()
         env.transition_W(alphas)        # update W at every iteration
         env.update(sin_values)
 
+        reached, val = env.reached_consensus()
+        if never_reached_consensus and reached:
+            print(f"Reached consensus of {val} at timestep {i}")
+            never_reached_consensus = False
         spoof_states.append(np.array(env.spoof.tolist()))
         leg_states.append(env.leg)
 
@@ -180,8 +201,6 @@ def run(leg, spoof, **kwargs):
     for key, val in kwargs.items():
         title += f"{key}: {val}, ".capitalize()
     plot_states(np.array(leg_states), np.array(spoof_states), title = title[:-2])
-
-    print("out")
 
 if __name__ == "__main__":
 
@@ -222,4 +241,4 @@ if __name__ == "__main__":
     
     # Question 2e
     if run_question["2ei"] or run_question["2eii"]:
-        run(leg, spoof, Question="2e")
+        run(leg, spoof, Question=question)
