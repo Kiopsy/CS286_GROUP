@@ -174,7 +174,6 @@ def run(leg, spoof, **kwargs):
     inputs = np.arange(0, iter*step, step)
     sin_values = np.sin(inputs) + 4
 
-
     # Run the simulation and plot
     leg_states = []
     spoof_states = []
