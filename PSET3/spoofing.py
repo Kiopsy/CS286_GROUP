@@ -4,20 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Run experiments for different questions:
-question = "2ei"
 
-run_question = dict()
-
+# Question options
 Qs = ["2a", "2b", "2c", "2d", "2ei", "2eii"]
 
+# NOTE: Change this string to any of the question options above
+question = "2eii"
+
+# Function for switching between which question to answer (not relevant to answers)
+run_question = dict()
 def answer_question(question):
     for key in Qs:
         run_question[key] = False
     run_question[question] = True
 
-# Question 2e
-sine = False
-exponential = True
 
 # this returns a bunch of weights - sets a mean alpha level, then randomly generates alphas around the means
 class AlphaWeights(object):
@@ -101,18 +101,31 @@ class Environment(object):
 
 
 # it plots the states - basically the same function from HW 2
-def plot_states(node_states, title = None):
+def plot_states(node_states, spoof_node_states, title = None):
 
     steps = np.arange(len(node_states))
 
     _, ax = plt.subplots()
-    for i in range(node_states.shape[1]):
-        line, = ax.plot(steps, node_states[:, i])
-        line.set_label(i)
 
-    # plot the average
-    line, = ax.plot(steps, np.ones(len(steps)) * np.average(node_states[0, :]))
-    line.set_label("average")
+    # Plot state of legitimate nodes
+    for i in range(node_states.shape[1]):
+        line, = ax.plot(steps, node_states[:, i], 'c')
+    line.set_label(f'States of the {node_states.shape[1]} legitimate nodes')
+
+    # Plot state of spoof nodes
+    for i in range(spoof_node_states.shape[1]):
+        line, = ax.plot(steps, spoof_node_states[:, i], ':r')
+    line.set_label(f'States of the {spoof_node_states.shape[1]} spoof nodes')
+
+    # Plot the average state
+    line, = ax.plot(steps, np.ones(len(steps)) * np.average(node_states[0, :]), '--')
+    line.set_label("Average state of legitmate nodes")
+
+    # print average states
+    initial_avg = np.average(node_states[0, :])
+    print(f"Legitimate nodes' initial average state: {initial_avg}")
+    final_avg = np.average(node_states[-1, :])
+    print(f"Legitimate nodes' final average state: {final_avg}")
 
     if title:
         ax.set_title(title)
@@ -133,90 +146,80 @@ def run(leg, spoof, **kwargs):
 
     theta = np.zeros((spoof.shape[0], leg.shape[0]))
 
-    # Sets the spoof transition function to account for the exponential case in 2e
+    # Sets the spoof transition function to account for the exponential case in 2e ii
     omega = np.eye(spoof.shape[0]) * 1.01 if run_question["2eii"] else np.eye(spoof.shape[0]) 
 
     # Define the environment
     env = Environment(leg, spoof, theta, omega)
 
+    # Changed from 200 iterations for better graphs
+    iter = 50
 
-    iter = 200
-
-    # Sine values
+    # Sin values for 2e i
     step = 2 * np.pi / 50
     inputs = np.arange(0, iter*step, step)
     sin_values = np.sin(inputs) + 4
-
-    # inputs = np.arange(0, iter)
-    # theta = 2 * np.pi
-    # period = 50 
-    # sin_positions = []
-    # if run_question["2ei"]:
-    #     for i in range(iter):
-    #         sin_positions.append(sin_func(i))
-
 
     # Run the simulation and plot
     leg_states = []
     spoof_states = []
 
-
     leg_states.append(env.leg)
+    spoof_states.append(np.array(env.spoof.tolist()))
 
-
-    for i in range(iter):
+    # update and store states over the 'iter' iterations
+    for _ in range(iter):
         alphas.update_betas()
         env.transition_W(alphas)        # update W at every iteration
         env.update(sin_values)
 
-        # spoof_states.append(env.spoof)
         spoof_states.append(np.array(env.spoof.tolist()))
         leg_states.append(env.leg)
 
     title = ""
     for key, val in kwargs.items():
-        title += f"{key} = {val}; "
-    plot_states(np.array(leg_states), title = title)
-
+        title += f"{key}: {val}, ".capitalize()
+    plot_states(np.array(leg_states), np.array(spoof_states), title = title[:-2])
 
     print("out")
 
-
 if __name__ == "__main__":
 
+    # picks which question to answer
     answer_question(question)
 
     # assume everything is in 1-D and fully connected
     spoof = np.array([4, 4, 4, 4])
 
+    # Question 2a: use the 4 spoof nodes and the given legitimate nodes
     if run_question["2a"]:
         leg_2a = np.array([1, 2, 1.1, 1.9, 1.4, 2.3, 0.7, 2, 1, 2, 1, 2, 1, 0.5, 0.8, 1.5, 1, 2, 1, 2])
-        run(leg_2a, spoof, question="2a")
+        run(leg_2a, spoof, Question="2a")
 
     # legitimate nodes with mean of 1.5 and st.d of 1
     leg = 1.5 + 1 * np.random.randn(20)
 
-    # Question 2b
+    # Question 2b: generate plots with legitimate node states generated from randomness four times; each with a different standard deviation
     if run_question["2b"]:
         standard_deviations = [0.1, 1, 3, 5]
         for std in standard_deviations:
             # Create varoius legitmate node lists with mean = 1.5 and varying st. d
             leg_2b = 1.5 + std * np.random.randn(20)
-            run(leg_2b, spoof, question="2b", std=std)
+            run(leg_2b, spoof, Question="2b", st_dev=std)
 
-    # Question 2c
+    # Question 2c: Create spoofs with inital states of 0, 2, 4, and 6
     if run_question["2c"]:
         for val in range(0, 8, 2):
             # Create spoofs with different spoof values
             spoof_2c = np.array([val] * 4)
-            run(leg, spoof_2c, question="2c", val=val)
+            run(leg, spoof_2c, Question="2c", spoof_val=val)
 
-    # Question 2d
-    #       Testing the following # of spoofers: 6, 8, 10, 14
+    # Question 2d: Testing the following # of spoofers: 6, 8, 10, 14
     if run_question["2d"]:
         for size in [6, 8, 10, 14]:
             spoof_2d = np.array([4] * size)
-            run(leg, spoof_2d, question="2d", size=size)
+            run(leg, spoof_2d, Question="2d", spoof_count=size)
     
+    # Question 2e
     if run_question["2ei"] or run_question["2eii"]:
-        run(leg, spoof, question="2e")
+        run(leg, spoof, Question="2e")
