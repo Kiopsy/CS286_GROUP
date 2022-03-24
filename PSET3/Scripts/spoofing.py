@@ -27,6 +27,7 @@ def answer_question(question):
 sine = False
 exponential = True
 
+
 # This returns a bunch of weights, sets a mean alpha level, then randomly generates alphas around the means
 class AlphaWeights(object):
 
@@ -70,8 +71,8 @@ class Environment(object):
         self.leg_len = leg.shape[0]
         self.full_len = leg.shape[0] + spoof.shape[0]
 
-        self.Theta = Theta              # transition for spoofed based on leg - n_s x n_l   (row, col)
-        self.Omega = Omega              # transition for spoofed based on spoofed - n_s x n_s
+        self.Theta = Theta  # transition for spoofed based on leg - n_s x n_l   (row, col)
+        self.Omega = Omega  # transition for spoofed based on spoofed - n_s x n_s
 
         # Transition for legitimate based on spoof and leg - n_l x (n_l + n_s)
         # First n_l columns are the legit part W_L
@@ -81,7 +82,7 @@ class Environment(object):
 
     # Updates according to the system dynamics given
     def update(self, sin_positions=None):
-
+        # Update states
         self.leg = np.matmul(self.W, np.concatenate((self.leg, self.spoof), axis=0))
         self.spoof = np.matmul(self.Theta, self.leg) + np.matmul(self.Omega, self.spoof)
 
@@ -95,6 +96,7 @@ class Environment(object):
     # Call alphaweights to get an updated beta, then use that to update W.
     # The code will call update to progress the simulation
     def transition_W(self, alphaweights):
+
         betas = alphaweights.betas
         
         # Change each element of weighting matrix W according to algorithm
@@ -148,6 +150,7 @@ def plot_states(node_states, q, file_mod, title = None):
 
     plt.show()
 
+
 def run(leg, spoof, **kwargs):
     # Print problem parameters
     print(kwargs)
@@ -178,9 +181,7 @@ def run(leg, spoof, **kwargs):
     leg_states = []
     spoof_states = []
 
-
     leg_states.append(env.leg)
-
 
     for i in range(iter):
         alphas.update_betas()
