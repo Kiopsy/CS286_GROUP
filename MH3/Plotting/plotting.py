@@ -33,7 +33,7 @@ def create_plot(part):
 
 # Create variable for easier evaluation
 # PART can either be "2a" or "3"
-PART = "2a"
-if PART != "2a" and PART != "3":
-    raise ValueError("The PART variable can only be '2a' or '3'")
+PART = "2"
+if PART != "2" and PART != "3":
+    raise ValueError("The PART variable can only be '2' or '3'")
 create_plot(PART)
