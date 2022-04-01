@@ -23,7 +23,7 @@ def create_plot(part):
     # Plot x and y
     plt.plot(odom_x, odom_y, label="Odom Trajectory")
 
-    # Beautify, show, and safe plot
+    # Beautify, show, and save plot
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
     plt.title("Comparison of Robot Trajectories\nPart " + part)
