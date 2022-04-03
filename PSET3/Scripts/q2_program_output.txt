@@ -1,0 +1,67 @@
+Data for program output:
+{'Question': '2a'}
+Reached consensus of 1.7358414414522918 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.41
+Legitimate nodes' final average state: 1.7574179810448958
+
+{'Question': '2b', 'st_dev': 0.1}
+Reached consensus of 1.829389194500753 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.5055781690503935
+Legitimate nodes' final average state: 1.8511478063037283
+{'Question': '2b', 'st_dev': 1}
+Reached consensus of 1.7498099326534535 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 1.4180174881400482
+Legitimate nodes' final average state: 1.764523794587916
+{'Question': '2b', 'st_dev': 3}
+Reached consensus of 1.564778192530944 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 1.2181232634318153
+Legitimate nodes' final average state: 1.5797550484233953
+{'Question': '2b', 'st_dev': 5}
+Reached consensus of 1.2525423817950796 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 0.8011831027470702
+Legitimate nodes' final average state: 1.2699324214110574
+
+{'Question': '2c', 'spoof_val': 0}
+Reached consensus of 1.3745665543099312 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.5718620845473084
+Legitimate nodes' final average state: 1.3618729301016652
+{'Question': '2c', 'spoof_val': 2}
+Reached consensus of 1.6252581276214368 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.5718620845473084
+Legitimate nodes' final average state: 1.6288184544759237
+{'Question': '2c', 'spoof_val': 4}
+Reached consensus of 1.8811257776299404 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 1.5718620845473084
+Legitimate nodes' final average state: 1.8939499227534715
+{'Question': '2c', 'spoof_val': 6}
+Reached consensus of 2.157792112574585 at timestep 8
+Average state of legitimate nodes before consensus algorithm: 1.5718620845473084
+Legitimate nodes' final average state: 2.1756854050539047
+
+{'Question': '2d', 'spoof_count': 6}
+Reached consensus of 2.1996034472709827 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.7833550256288493
+Legitimate nodes' final average state: 2.2253005259200074
+{'Question': '2d', 'spoof_count': 8}
+Reached consensus of 2.32778629907511 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 1.7833550256288493
+Legitimate nodes' final average state: 2.3490576777047507
+{'Question': '2d', 'spoof_count': 10}
+Reached consensus of 2.420932924670212 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.7833550256288493
+Legitimate nodes' final average state: 2.4573207790325626
+{'Question': '2d', 'spoof_count': 14}
+Reached consensus of 2.649874397186119 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.7833550256288493
+Legitimate nodes' final average state: 2.694151259471688
+
+{'Question': '2ei'}
+Reached consensus of 1.745557230541421 at timestep 7
+Average state of legitimate nodes before consensus algorithm: 1.3959580563196767
+Legitimate nodes' final average state: 1.7659273350904585
+
+{'Question': '2eii'}
+Reached consensus of 2.0739792773582844 at timestep 6
+Average state of legitimate nodes before consensus algorithm: 1.7965934212064956
+Legitimate nodes' final average state: 2.0971319356403106
+

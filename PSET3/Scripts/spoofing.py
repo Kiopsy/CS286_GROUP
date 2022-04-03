@@ -1,4 +1,5 @@
 import math
+from re import I
 from tempfile import SpooledTemporaryFile
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,7 +10,7 @@ import matplotlib.pyplot as plt
 Qs = ["2a", "2b", "2c", "2d", "2ei", "2eii"]
 
 # NOTE: Change this string to any of the question options above
-question = "2eii"
+question = "2b"
 
 # Function for switching between which question to answer (not relevant to answers)
 run_question = dict()
@@ -77,6 +78,7 @@ class Environment(object):
         self.leg = np.matmul(self.W, np.concatenate((self.leg, self.spoof), axis=0))
         self.spoof = np.matmul(self.Theta, self.leg) + np.matmul(self.Omega, self.spoof)
 
+        # Use the sin_positions at our current iteration
         if run_question["2ei"]:
             self.spoof.fill(sin_positions[self.iter])
         
@@ -100,8 +102,24 @@ class Environment(object):
             self.W[i][i] += 1 - (np.sum(self.W[i]))
 
 
+    # check if we reached consensus function
+    def reached_consensus(self):
+
+        t = .005
+
+        # Potential consensus value
+        mean = np.sum(self.leg) / self.leg_len
+
+        at_consensus = True
+        for node in self.leg:
+            if (node > mean + t) or (node < mean - t):
+                at_consensus = False
+        
+        return at_consensus, mean
+
+
 # it plots the states - basically the same function from HW 2
-def plot_states(node_states, spoof_node_states, title = None):
+def plot_states(node_states, spoof_node_states, consensus=None, title = None):
 
     steps = np.arange(len(node_states))
 
@@ -110,22 +128,25 @@ def plot_states(node_states, spoof_node_states, title = None):
     # Plot state of legitimate nodes
     for i in range(node_states.shape[1]):
         line, = ax.plot(steps, node_states[:, i], 'c')
-    line.set_label(f'States of the {node_states.shape[1]} legitimate nodes')
+    line.set_label(f'Legit States')
 
     # Plot state of spoof nodes
     for i in range(spoof_node_states.shape[1]):
         line, = ax.plot(steps, spoof_node_states[:, i], ':r')
-    line.set_label(f'States of the {spoof_node_states.shape[1]} spoof nodes')
+    line.set_label(f'Spoofed States')
 
     # Plot the average state
     line, = ax.plot(steps, np.ones(len(steps)) * np.average(node_states[0, :]), '--')
-    line.set_label("Average state of legitmate nodes")
+    line.set_label("Average of Legit States")
+
+    if consensus:
+        x, y = consensus
+        line = ax.scatter(x, y, s=80, color="purple", marker=(5, 1), zorder=2)
+        line.set_label(f"Consensus = {y[0]:0.2f} ")
 
     # print average states
-    initial_avg = np.average(node_states[0, :])
-    print(f"Legitimate nodes' initial average state: {initial_avg}")
-    final_avg = np.average(node_states[-1, :])
-    print(f"Legitimate nodes' final average state: {final_avg}")
+    print(f"Legit nodes' starting average state: {np.average(node_states[0, :])}")
+    print(f"Legit nodes' ending average state: {np.average(node_states[-1, :])}")
 
     if title:
         ax.set_title(title)
@@ -167,11 +188,22 @@ def run(leg, spoof, **kwargs):
     leg_states.append(env.leg)
     spoof_states.append(np.array(env.spoof.tolist()))
 
+    # capture consensus
+    never_reached_consensus = True
+    consensus = None
+
     # update and store states over the 'iter' iterations
-    for _ in range(iter):
+    for i in range(iter):
         alphas.update_betas()
         env.transition_W(alphas)        # update W at every iteration
         env.update(sin_values)
+
+        # check if we reached consensus
+        reached, val = env.reached_consensus()
+        if never_reached_consensus and reached:
+            print(f"Reached consensus of {val} at timestep {i}")
+            never_reached_consensus = False
+            consensus = ([i], [val])
 
         spoof_states.append(np.array(env.spoof.tolist()))
         leg_states.append(env.leg)
@@ -179,9 +211,7 @@ def run(leg, spoof, **kwargs):
     title = ""
     for key, val in kwargs.items():
         title += f"{key}: {val}, ".capitalize()
-    plot_states(np.array(leg_states), np.array(spoof_states), title = title[:-2])
-
-    print("out")
+    plot_states(np.array(leg_states), np.array(spoof_states), consensus = consensus, title = title[:-2])
 
 if __name__ == "__main__":
 
