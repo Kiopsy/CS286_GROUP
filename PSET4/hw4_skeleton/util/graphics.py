@@ -30,6 +30,7 @@ class graphics:
         self.line_distance = 150
         self._root_window2 = tkinter.Tk()
         self._root_window = self._root_window2
+        # self._root_window = None
         self._canvas = None  # The canvas which holds graphics
         self._canvas_xs = None  # Size of canvas object
         self._canvas_ys = None
@@ -172,7 +173,7 @@ def plot_distribution(dist, label):
     foldername = os.getcwd() + '/../data/' + label
     ps = g._canvas.postscript(colormode='color')
     img = Image.open(io.BytesIO(ps.encode('utf-8')))
-    img.save(foldername + ".png", 'png')
+    # img.save(foldername + ".png", 'png')
     input("Enter any key to continue")
     #g.clear_screen()
 

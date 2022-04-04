@@ -19,7 +19,7 @@ def find_pickup_probability():
         pu_y = row['pickup_y']
         do_x = row['dropoff_x']
         do_y = row['dropoff_y']
-        print(min, (pu_x, pu_y), (do_x, do_y))
+        # print(min, (pu_x, pu_y), (do_x, do_y))
 
         locs[(pu_x, pu_y)] = locs.get((pu_x, pu_y), 0) + 1
         total += 1
@@ -45,11 +45,25 @@ def find_pickup_probability():
 
 def find_dropoff_probability():
     time_pickup_dropoff_data = pd.read_csv(os.getcwd()+'/../data/requests_details_day1.csv', names=['pickup_minute', 'pickup_x', 'pickup_y', 'dropoff_x', 'dropoff_y'])
-    dropoff_distribution = {} #The key should be a tuple of (x,y) and the value would be the dropoff probability of that location
+    dropoff_distribution = {} 
+    # The key should be a tuple of (x,y) and the value would be the dropoff probability of that location
     # The key (x,y) : (int, int). Dropoff location's x, and y coordinates
     # the value p: float. p is the dropoff probability of location (x,y)
     # sum(dropoff_distribution.values()) should be 1
     ################################# Begin your code ###############################
+
+    total = 0
+    locs = dict()
+
+    for index, row in time_pickup_dropoff_data.iterrows():
+        do_x = row['dropoff_x']
+        do_y = row['dropoff_y']
+
+        locs[(do_x, do_y)] = locs.get((do_x, do_y), 0) + 1
+        total += 1
+    
+    for loc, count in locs.items():
+        dropoff_distribution[loc] = count/total
 
     ################################# End your code #################################
     #return dropoff_distribution

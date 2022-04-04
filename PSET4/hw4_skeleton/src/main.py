@@ -42,7 +42,7 @@ if __name__ == '__main__':
     print('starting main code here')
     main_question_1()
 
-    #main_question_2()
+    main_question_2()
 
     #main_question_3()
 
