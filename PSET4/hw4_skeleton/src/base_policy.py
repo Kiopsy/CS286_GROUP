@@ -12,7 +12,19 @@ class base_policy:
         # You can give horizontal motion more presidence over vertical motion
         # for example location1 = (1, 1), location2 = (2, 3), the fuction returns 2.
         ################################# Begin your code ###############################
+        horizontal = location2[0] - location1[0]
+        vertical = location2[1] - location1[1]
 
+        if horizontal > 0:
+            dir = 2
+        elif horizontal < 0: 
+            dir = 1
+        elif vertical > 0:
+            dir = 3
+        elif vertical < 0:
+            dir = 4
+        else:
+            dir = 0 
         ################################# End your code ###############################
         return dir
 
@@ -21,6 +33,11 @@ class base_policy:
         # If a request's pickup location is the same as agent ell's location and the taxi is availble, return the 5+index of the request in the outstanding_requests list
         # Else if the taxi is available, return the direction of motion using the taxi ell's location and the nearest request's pickup location
         ################################# Begin your code ###############################
+
+        ell_location = taxi_state_object.agent_locations[ell]
+        
+        print("base policy: " + str(ell) )
+        # .outstanding_requests
 
         ################################# End your code ###############################
         if control_component is None:
