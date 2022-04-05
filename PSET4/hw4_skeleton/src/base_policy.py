@@ -23,46 +23,58 @@ class base_policy:
         elif horizontal < 0: 
             dir = 1
         elif vertical > 0:
-            dir = 3
-        elif vertical < 0:
             dir = 4
+        elif vertical < 0:
+            dir = 3
         else:
             dir = 0 
         ################################# End your code ###############################
+
         return dir
 
     def get_base_policy_control_component(self, taxi_state_object, ell):
-        control_component = None
+        control_component = 0
         # If a request's pickup location is the same as agent ell's location and the taxi is availble, return the 5+index of the request in the outstanding_requests list
         # Else if the taxi is available, return the direction of motion using the taxi ell's location and the nearest request's pickup location
         ################################# Begin your code ###############################
 
-        # ell is the index of the agent to be used in the list: agent_locations
-        ell_location = taxi_state_object.agent_locations[ell]
+        # Create variable for the index of the agent to be used in the list: agent_locations
+        ell_loc = taxi_state_object.agent_locations[ell]
+        # Create variable for time left in ell's ride and determine whether ell is available
+        time_left = taxi_state_object.time_left_in_current_trip[ell]
+        print("TIME LEFT: " + str(time_left))
+        ell_avail = True if time_left == 0 else False
 
-        manhattan_distance_lst = []
-        # print("Agent location: " + str(ell_location))
-        for count, req in enumerate(taxi_state_object.outstanding_requests):
-            pickup_location = [req[0], req[1]]
-            # print(str(count) + "th pickup location: " + str(pickup_location))
-            if ell_location == pickup_location: 
-                control_component = count + 5
-                return control_component
-            else:
-                dist = taxi_state_object.g.manhattan_distance(ell_location, pickup_location)
-                # print("dist: " + str(dist))
-                manhattan_distance_lst.append(dist)
+        if ell_avail:
+            # Create list to save Manhattan distances
+            manhattan_dists = []
 
-        print(manhattan_distance_lst)
-        if manhattan_distance_lst:
-            m = manhattan_distance_lst.index(min(manhattan_distance_lst))
-            # print("m: " + str(m))
-            nearest_req = taxi_state_object.outstanding_requests[m]
+            # Consider all outstanding requests
+            for idx, req in enumerate(taxi_state_object.outstanding_requests):
+                pickup_loc = [req[0], req[1]]
+                # print(str(count) + "th pickup location: " + str(pickup_location))
+                if ell_loc == pickup_loc:
+                    # Pickup request in ell's current location
+                    control_component = 5 + idx
+                    print("PICKIGN UP")
+                    return control_component
+                else:
+                    # Add Manhattan distance to list for future control determination
+                    dist = taxi_state_object.g.manhattan_distance(ell_loc, pickup_loc)
+                    # print("dist: " + str(dist))
+                    manhattan_dists.append(dist)
+            
+            print(manhattan_dists)
+            if manhattan_dists:
+                # Find which request is closest (index of minimum distance)
+                min_idx = manhattan_dists.index(min(manhattan_dists))
+                # print("m: " + str(m))
+                nearest_req = taxi_state_object.outstanding_requests[min_idx]
 
-            control_component = self.next_direction(ell_location, [nearest_req[0], nearest_req[1]])
-            # print("s': " + str(control_component))
+                control_component = self.next_direction(ell_loc, (nearest_req[0], nearest_req[1]))
+                # print("s': " + str(control_component))
+
+            
         ################################# End your code ###############################
-        if control_component is None:
-            return 0
         return control_component
 

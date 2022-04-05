@@ -52,7 +52,7 @@ if __name__ == '__main__':
     s2 = state(None, 2)  # states for 2 agents. Use it in questions 5, 7, 8
     # If you want to compare trajectories given by questions 5, 7, 8, you should use the same instance of the state s2
 
-    # main_question_4(s1)
+    main_question_4(s1)
 
     main_question_5(s2)
 
