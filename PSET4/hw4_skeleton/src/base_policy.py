@@ -40,8 +40,7 @@ class base_policy:
         # ell is the index of the agent to be used in the list: agent_locations
         ell_location = taxi_state_object.agent_locations[ell]
 
-        manhattan_distance_lst = np.array([])
-
+        manhattan_distance_lst = []
         for count, req in enumerate(taxi_state_object.outstanding_requests):
             pickup_location = [req[0], req[1]]
             if ell_location == pickup_location: 
@@ -49,14 +48,13 @@ class base_policy:
                 return control_component
             else:
                 dist = taxi_state_object.g.manhattan_distance(ell_location, pickup_location)
-                np.append(manhattan_distance_lst, dist)
+                manhattan_distance_lst.append(dist)
 
-        if np.any(manhattan_distance_lst):
-            min = np.argmin(manhattan_distance_lst)
-            nearest_req = taxi_state_object.outstanding_requests[min]
+        if manhattan_distance_lst:
+            m = manhattan_distance_lst.index(min(manhattan_distance_lst))
+            nearest_req = taxi_state_object.outstanding_requests[m]
 
             control_component = self.next_direction(ell_location, [nearest_req[0], nearest_req[1]])
-
         ################################# End your code ###############################
         if control_component is None:
             return 0
