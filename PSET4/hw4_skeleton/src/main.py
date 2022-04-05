@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     main_question_2()
 
-    #main_question_3()
+    main_question_3()
 
     #s1 = state(None, 1)  # states for 1 agent. Use it in questions 4, 6
     # If you want to compare trajectories given by questions 4, 6, you should use the same instance of the state s1

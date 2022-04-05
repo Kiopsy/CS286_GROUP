@@ -173,7 +173,7 @@ def plot_distribution(dist, label):
     foldername = os.getcwd() + '/../data/' + label
     ps = g._canvas.postscript(colormode='color')
     img = Image.open(io.BytesIO(ps.encode('utf-8')))
-    # img.save(foldername + ".png", 'png')
+    img.save(foldername + ".png", 'png')
     input("Enter any key to continue")
     #g.clear_screen()
 
