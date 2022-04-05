@@ -1,3 +1,6 @@
+from flask import request
+import numpy as np
+
 class base_policy:
     def get_control(self, taxi_state_object):
         #print('get_control() base policy')
@@ -34,10 +37,25 @@ class base_policy:
         # Else if the taxi is available, return the direction of motion using the taxi ell's location and the nearest request's pickup location
         ################################# Begin your code ###############################
 
+        # ell is the index of the agent to be used in the list: agent_locations
         ell_location = taxi_state_object.agent_locations[ell]
-        
-        print("base policy: " + str(ell) )
-        # .outstanding_requests
+
+        manhattan_distance_lst = np.array([])
+
+        for count, req in enumerate(taxi_state_object.outstanding_requests):
+            pickup_location = [req[0], req[1]]
+            if ell_location == pickup_location: 
+                control_component = count + 5
+                return control_component
+            else:
+                dist = taxi_state_object.g.manhattan_distance(ell_location, pickup_location)
+                np.append(manhattan_distance_lst, dist)
+
+        if np.any(manhattan_distance_lst):
+            min = np.argmin(manhattan_distance_lst)
+            nearest_req = taxi_state_object.outstanding_requests[min]
+
+            control_component = self.next_direction(ell_location, [nearest_req[0], nearest_req[1]])
 
         ################################# End your code ###############################
         if control_component is None:
