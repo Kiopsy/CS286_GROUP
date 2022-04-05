@@ -41,20 +41,26 @@ class base_policy:
         ell_location = taxi_state_object.agent_locations[ell]
 
         manhattan_distance_lst = []
+        # print("Agent location: " + str(ell_location))
         for count, req in enumerate(taxi_state_object.outstanding_requests):
             pickup_location = [req[0], req[1]]
+            # print(str(count) + "th pickup location: " + str(pickup_location))
             if ell_location == pickup_location: 
                 control_component = count + 5
                 return control_component
             else:
                 dist = taxi_state_object.g.manhattan_distance(ell_location, pickup_location)
+                # print("dist: " + str(dist))
                 manhattan_distance_lst.append(dist)
 
+        print(manhattan_distance_lst)
         if manhattan_distance_lst:
             m = manhattan_distance_lst.index(min(manhattan_distance_lst))
+            # print("m: " + str(m))
             nearest_req = taxi_state_object.outstanding_requests[m]
 
             control_component = self.next_direction(ell_location, [nearest_req[0], nearest_req[1]])
+            # print("s': " + str(control_component))
         ################################# End your code ###############################
         if control_component is None:
             return 0
