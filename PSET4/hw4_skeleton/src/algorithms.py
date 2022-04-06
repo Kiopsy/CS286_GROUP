@@ -3,6 +3,7 @@ import copy, sys, itertools, os,csv
 from base_policy import base_policy
 sys.path.append('../util/')
 from graphics import plot_trajectory, visualize_requests
+import itertools
 
 class standard_rollout:
     def get_cartesian_product(self, list_of_all_control_component_sets):
@@ -10,8 +11,9 @@ class standard_rollout:
         # for example if list_of_all_control_component_sets = [[1, 2, 3],[4,5,6]]
         # the function should return [(1, 4), (1, 5), (1, 6), (2, 4), (2, 5), (2, 6), (3, 4), (3, 5), (3, 6)]
         ################################# Begin your code ###############################
-
-        return None
+        # Use itertools to compute cartesian product of control component sets
+        controls = itertools.product(*list_of_all_control_component_sets)
+        return controls
         ################################# End your code ###############################
 
 
