@@ -23,7 +23,8 @@ class standard_rollout:
             state_object = copy.deepcopy(taxi_state_object) #use state_object for further operations inside this function
             # update expected_cost using the 1) the next_state with the given control 2) future cost using the average_MC_simulation using base policy
             ################################# Begin your code ###############################
-
+            # Add stage cost and expected future cost to expected_cost
+            expected_cost += state_object.next_state(control) + average_MC_simulation(state_object)
             ################################# End your code ###############################
         expected_cost /= 10.0
         return expected_cost
@@ -34,8 +35,9 @@ class standard_rollout:
         # For the 2 agents case, if control_cost = {(0, 0): 23.47, (0, 2): 22.35, (0, 4): 20.11, (1, 0): 21.59, (1, 2): 17.96, (1, 4): 19.27}
         # This funtion should return (1, 2)
         ################################# Begin your code ###############################
-
-        return 0
+        # Find the minimum-cost control
+        min_cost_control = min(control_cost, key=control_cost.get) # key arg indicates that we want index of min-cost
+        return min_cost_control
         ################################# End your code ###############################
 
     def get_control(self, taxi_state_object):
@@ -48,7 +50,15 @@ class standard_rollout:
         # Populate control_cost using expectation_for_minimization for all controls given by the cartesian product
         # return min_control which is the minimizing control in control_cost dictionary
         ################################# Begin your code ###############################
-
+        # For each agent, create list of its available controls and add it to list_of_all_control_component_sets
+        list_of_all_control_component_sets = [taxi_state_object.available_control_agent(ell) for ell in range(taxi_state_object.g.m)]
+        # Find cartesian product
+        control_combos = self.get_cartesian_product(list_of_all_control_component_sets)
+        for combo in control_combos:
+            # Populate list_of_all_control_component_sets with expected sum of stage cost and expected future cost
+            control_cost[combo] = self.expectation_for_minimization(taxi_state_object, combo)
+        # Find control with minimum expected cost
+        min_control = self.minimization_of_expectations(control_cost)
         ################################# End your code ###############################
         return min_control
 
