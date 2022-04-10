@@ -1,3 +1,4 @@
+from email.mime import base
 import numpy as np
 import copy, sys, itertools, os,csv
 from base_policy import base_policy
@@ -71,7 +72,8 @@ class one_at_a_time_rollout:
             state_object = copy.deepcopy(taxi_state_object) #use state_object for further operations inside this function
             # update expected_cost using the 1) the next_state with the given control 2) future cost using the average_MC_simulation using base policy
             ################################# Begin your code ###############################
-
+            # Add stage cost and expected future cost to expected_cost
+            expected_cost += state_object.next_state(control) + average_MC_simulation(state_object)
             ################################# End your code ###############################
         expected_cost /= 10.0
         return expected_cost
@@ -80,12 +82,12 @@ class one_at_a_time_rollout:
         # if control_cost = {0: 21.7, 1: 23.13, 2: 18.02, 3: 19.86, 4: 19.04}
         # The function should return 2
         ################################# Begin your code ###############################
-
-        return 0
+        # Find the minimum-cost control
+        min_cost_control = min(control_cost, key=control_cost.get) # key arg indicates that we want index of min-cost
+        return min_cost_control
         ################################# End your code ###############################
 
     def get_control(self, taxi_state_object):
-        one_at_a_time_rollout_control = None
         # construct one_at_a_time_rollout_control sequentially from agent 0 to taxi_state_object.g.m-1
         # for an agent ell set the constructed_control using the base policy and for all agents from ell+1 to taxi_state_object.g.m-1
         # and set the constructed_control using one_at_a_time_rollout_control and for all agents from 0 to ell-1
@@ -93,7 +95,28 @@ class one_at_a_time_rollout:
         # Populate a dictionary where <key: agent ell's availble control, corresponding stage and future cost using expectation_for_minimization
         # Set the minimizing control component for agent ell in one_at_a_time_rollout_control from the dictionary
         ################################# Begin your code ###############################
-
+        # Get control given by base policy
+        base_policy_control = base_policy().get_control(taxi_state_object)
+        # Create list for all controls
+        one_at_a_time_rollout_control = []
+        m = taxi_state_object.g.m
+        for ell in range(m):
+            # Create and populate list of control components
+            constructed_control = base_policy_control
+            if ell != 0:
+                constructed_control[0:ell] = one_at_a_time_rollout_control[0:ell]
+            #constructed_control[ell+1:m] = base_policy_control[ell+1:m]
+            control_cost = {}
+            # Find available controls for agent ell
+            avail_controls = taxi_state_object.available_control_agent(ell)
+            for control in avail_controls:
+                # Compute expected costs for each available control
+                constructed_control[ell] = control
+                control_cost[control] = self.expectation_for_minimization(taxi_state_object, constructed_control)
+            # Find minimum-cost control for agent ell
+            min_cost_control = self.minimization_of_expectations(control_cost)
+            # Append to list of all controls
+            one_at_a_time_rollout_control.append(min_cost_control)
         ################################# End your code ###############################
         return one_at_a_time_rollout_control
 
