@@ -56,9 +56,9 @@ if __name__ == '__main__':
 
     #main_question_5(s2)
 
-    #main_question_6(s1)
+    main_question_6(s1)
 
-    #main_question_7(s2)
+    main_question_7(s2)
 
     main_question_8(s2)
 
