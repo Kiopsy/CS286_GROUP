@@ -154,10 +154,11 @@ def MC_simulation(taxi_state_object, policy_name='base_policy', do_print=True):
 
 def average_MC_simulation(taxi_state_object, policy_name='base_policy', do_print=True):
     trajectory_cost_average = 0
-    for num_simu in range(10):
+    simulations = 50
+    for num_simu in range(simulations):
         trajectory_cost_, _ = MC_simulation(taxi_state_object, policy_name, do_print)
         trajectory_cost_average += trajectory_cost_#+term_cost
-    trajectory_cost_average /= 10.0
+    trajectory_cost_average /= float(simulations)
     if (do_print):
         print('Inside average_MC_simulation: average_MC_simulation ', trajectory_cost_average)
     return trajectory_cost_average
