@@ -30,8 +30,9 @@ def find_pickup_probability():
     # sum(pickup_distribution.values()) should be 1
     ################################# Begin your code ###############################
 
+    # Populate pickup_distribution dictionary with probabilities
     for loc, count in locs.items():
-        pickup_distribution[loc] = count/total
+        pickup_distribution[loc] = count / total
 
     ################################# End your code #################################
     plot_distribution(pickup_distribution, "Pickup distribution")
@@ -55,6 +56,7 @@ def find_dropoff_probability():
     total = 0
     locs = dict()
 
+    # Count dropoffs and totals in dataset
     for index, row in time_pickup_dropoff_data.iterrows():
         do_x = row['dropoff_x']
         do_y = row['dropoff_y']
@@ -62,8 +64,9 @@ def find_dropoff_probability():
         locs[(do_x, do_y)] = locs.get((do_x, do_y), 0) + 1
         total += 1
     
+    # Populate dropoff_distribution dictionary with probabilities
     for loc, count in locs.items():
-        dropoff_distribution[loc] = count/total
+        dropoff_distribution[loc] = count / total
 
     ################################# End your code #################################
     #return dropoff_distribution
