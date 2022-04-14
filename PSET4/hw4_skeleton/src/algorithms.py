@@ -20,7 +20,7 @@ class standard_rollout:
 
     def expectation_for_minimization(self, taxi_state_object, control):
         expected_cost = 0
-        simulations = 50
+        simulations = 100
         for num_simu in range(simulations):
             state_object = copy.deepcopy(taxi_state_object) #use state_object for further operations inside this function
             # update expected_cost using the 1) the next_state with the given control 2) future cost using the average_MC_simulation using base policy
@@ -69,7 +69,7 @@ class one_at_a_time_rollout:
 
     def expectation_for_minimization(self, taxi_state_object, control):
         expected_cost = 0
-        simulations = 50
+        simulations = 100
         for num_simu in range(simulations):
             state_object = copy.deepcopy(taxi_state_object) #use state_object for further operations inside this function
             # update expected_cost using the 1) the next_state with the given control 2) future cost using the average_MC_simulation using base policy
@@ -154,7 +154,7 @@ def MC_simulation(taxi_state_object, policy_name='base_policy', do_print=True):
 
 def average_MC_simulation(taxi_state_object, policy_name='base_policy', do_print=True):
     trajectory_cost_average = 0
-    simulations = 50
+    simulations = 100
     for num_simu in range(simulations):
         trajectory_cost_, _ = MC_simulation(taxi_state_object, policy_name, do_print)
         trajectory_cost_average += trajectory_cost_#+term_cost
