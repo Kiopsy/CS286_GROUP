@@ -42,7 +42,6 @@ class base_policy:
         ell_loc = taxi_state_object.agent_locations[ell]
         # Create variable for time left in ell's ride and determine whether ell is available
         time_left = taxi_state_object.time_left_in_current_trip[ell]
-        print("TIME LEFT: " + str(time_left))
         ell_avail = True if time_left == 0 else False
 
         if ell_avail:
@@ -56,7 +55,6 @@ class base_policy:
                 if ell_loc == pickup_loc:
                     # Pickup request in ell's current location
                     control_component = 5 + idx
-                    print("PICKIGN UP")
                     return control_component
                 else:
                     # Add Manhattan distance to list for future control determination
