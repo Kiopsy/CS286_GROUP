@@ -13,7 +13,8 @@ class Robot:
         self.grid = grid
         self.seen = dict()
         self.path = set()
-    
+        self.frontier = None
+        
     def get_frontier(self):
         Q = [self.pos]
         V = set()
@@ -49,7 +50,12 @@ class Robot:
                 pass
 
         return None
-    
+
+    def get_frontier_path(self):
+        self.frontier = self.get_frontier()
+        self.path = self.create_path(self.frontier)
+
+
     def create_path(self, goal):
         goal = (goal[1], goal[0])
         start = (self.pos[1], self.pos[0])
@@ -61,12 +67,9 @@ class Robot:
         return set(path)
 
     def explore(self):
-        frontier = self.get_frontier()
-
-        if frontier: 
-            self.path = self.create_path(frontier)
-            self.pos = frontier
-            return frontier
+        if self.frontier: 
+            self.pos = self.frontier
+            return self.frontier
         else:
             print("Map finished")
             return None

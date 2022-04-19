@@ -1,5 +1,6 @@
 # Final Project Simulation
 from grid import Grid
+from graphics import GraphicsWindow
                 
 def main():
     g = Grid()
@@ -7,7 +8,10 @@ def main():
     # g.plot_grid()
     while True:
         x = g.update_grid()
-        print()
+
+        graphics = GraphicsWindow(g.dynamic_grid)
+        graphics.show_env()
+        # print()
 
         if x == None:
             break

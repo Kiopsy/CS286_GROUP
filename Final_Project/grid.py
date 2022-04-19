@@ -1,30 +1,42 @@
 from constants import c
 from robot import Robot
+import copy 
 
 class Grid:
     def __init__(self):
         self.robots = []
         self.grid = [[]]
+        self.dynamic_grid = None
         
     def update_grid(self): 
 
         rob = self.robots[0]
+
         rob.sense()
+        rob.get_frontier_path()
 
         for y in range(len(self.grid)):
             for x in range(len(self.grid[0])):
                 pt = (x, y)
                 if pt == rob.pos:
                     print("R", end="")
+                    self.dynamic_grid[y][x] = "R"
+                elif rob.frontier == pt:
+                    print("F", end="")
+                    self.dynamic_grid[y][x] = "F"
                 elif pt in rob.path:
                     print(".", end = "")
+                    self.dynamic_grid[y][x] = "."
                 elif pt in rob.seen:
                     if rob.seen[pt] == c.FREE:
                         print(" ", end="")
+                        self.dynamic_grid[y][x] = " "
                     elif rob.seen[pt] == c.WALL:
                         print("W", end="")
+                        self.dynamic_grid[y][x] = "W"
                 else:
                     print("-", end='')
+                    self.dynamic_grid[y][x] = "-"
             print()
 
         return rob.explore()
@@ -54,6 +66,7 @@ class Grid:
         
         # Create grid
         self.grid = grid
+        self.dynamic_grid = copy.deepcopy(grid)
 
         # Create robot list
         for x, y in robot_pos:
