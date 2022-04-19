@@ -30,9 +30,9 @@ class GraphicsWindow:
     def convert(self):
         env = self.env
         # Replace characters with colors
-        for y in range(len(env)):
-            for x in range(len(env[y])):
-                env[y][x] = self.replace_values(env[y][x])
+        for x in range(len(env)):
+            for y in range(len(env[x])):
+                env[x][y] = self.replace_values(env[x][y])
         
     def show_env(self): 
         self.convert()
