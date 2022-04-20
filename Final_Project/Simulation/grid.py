@@ -1,5 +1,6 @@
 from constants import c
 from robot import Robot
+import numpy as np
 import copy 
 
 class Grid:
@@ -49,20 +50,44 @@ class Grid:
 
         robot_pos = []
 
-        # Read file
+        '''
         with open(filename) as f:
-            rows = f.readlines()
+            int_grid = np.genfromtxt(filename, dtype=int)
+            str_grid = np.full_like(int_grid, " ", dtype=str)
+            str_grid[int_grid >= c.WALL_THRESH] = c.WALL
+            str_grid[int_grid == c.ROBOT_INT] = c.ROBOT
 
-        for y, row in enumerate(rows):
+            robot_pos = np.where(str_grid == c.ROBOT)
+            robot_pos = list(zip(robot_pos[0], robot_pos[1]))
+
+            self.grid = str_grid.tolist()
+            self.dynamic_grid = copy.deepcopy(str_grid.tolist())
+
+            # Create robot list
+            for x, y in robot_pos:
+                self.robots.append(Robot(int(x), int(y), grid))
+        '''
+
+        # Read file
+        #with open(filename) as f:
+            #lines = f.readlines()
+
+        int_grid = np.genfromtxt(filename, dtype=int).tolist()
+
+        for y, row in enumerate(int_grid):
             temp = []
             
-            row = row.replace(' ', '')
-            row = row.replace('\n', '')
-            for x, col in enumerate(row): 
-                temp.append(col)
-                if(col == 'R'):
+            #row = row.replace(' ', '')
+            #row = row.replace('\n', '')
+            for x, col in enumerate(row):
+                if col == c.ROBOT_INT:
+                    temp.append(c.ROBOT)
                     r = (x, y)
                     robot_pos.append(r)
+                elif col >= c.WALL_THRESH:
+                    temp.append(c.WALL)
+                else:
+                    temp.append(c.FREE)
                     
             grid.append(temp)
         
