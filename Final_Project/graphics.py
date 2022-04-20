@@ -60,7 +60,7 @@ class GraphicsWindow:
 
         plt.title('Robot Map\nTimestep = ' + str(timestep))
         #plt.show()
-        plt.savefig(os.getcwd() + '/Frames/Frame_' + str(timestep) + '.png')
+        plt.savefig(os.getcwd() + '/Frames/Frame_' + str(timestep) + '.png', bbox_inches='tight')
 
 
         
