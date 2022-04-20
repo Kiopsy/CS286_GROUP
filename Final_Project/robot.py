@@ -38,6 +38,8 @@ class Robot:
                 if n not in self.seen:
                     return n
 
+                # NOTE: May need to handle case where edges are not walls
+
                 Q.append((x - 1, y))
                 Q.append((x + 1, y))
                 Q.append((x, y - 1))
@@ -57,13 +59,28 @@ class Robot:
         self.prev_path = self.path
         self.path = self.create_path(self.frontier)
 
+    def distance(self, point1, point2):
+        # Return Euclidean distance between two points
+        return ((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2) ** (1 / 2)
+
+
+    def sort_path(self, points, start):
+        # Create new list for sorted path
+        sorted_path = [start]
+        points.remove(start)
+        # Sort points based on shortest distance between one point and another, appending as needed
+        while points:
+            nearest_point = min(points, key=lambda x: self.distance(sorted_path[-1], x))
+            sorted_path.append(nearest_point)
+            points.remove(nearest_point)
+        # Return list for sorted path
+        return sorted_path
 
     def create_path(self, goal):
         if goal:
             goal = (goal[1], goal[0])
             start = (self.pos[1], self.pos[0])
             path = astar(self.grid, start, goal)
-
             for i, pt in enumerate(path):
                 path[i] = (pt[1], pt[0])
             
@@ -74,8 +91,10 @@ class Robot:
         return path
 
     def explore(self):
-        if self.frontier: 
-            self.pos = self.frontier
+        if self.frontier:
+            #self.pos = self.frontier
+            sorted_path = self.sort_path(self.path, self.pos)
+            self.pos = sorted_path[1]
             return self.frontier
         else:
             print("Map finished")

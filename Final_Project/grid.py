@@ -6,17 +6,16 @@ class Grid:
     def __init__(self):
         self.robots = []
         self.grid = [[]]
-        self.dynamic_grid = None
+        self.dynamic_grid = [[]]
         
     def update_grid(self): 
-
         rob = self.robots[0]
 
         rob.sense()
         rob.get_frontier_path()
 
         for y in range(len(self.grid)):
-            for x in range(len(self.grid[0])):
+            for x in range(len(self.grid[y])):
                 pt = (x, y)
                 if pt == rob.pos:
                     print("R", end="")

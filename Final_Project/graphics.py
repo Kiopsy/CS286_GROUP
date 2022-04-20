@@ -1,21 +1,23 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.patches as mpatch
 import matplotlib.colors as mcol
+import matplotlib.animation as manim
 
 # Define RGB triples for colors
 RED = [255, 0, 0]
-PINK = [255, 192, 203]
+LIGHTRED = [255, 192, 203]
 GRAY = [128, 128, 128]
 BLACK = [0, 0, 0]
 GREEN = [0, 255, 0]
 LIGHTGREEN = [152, 251, 152]
 WHITE = [255, 255, 255]
 
-# Define character values and corresponding color values and labels
+# Define character values and corresponding colors and labels
 COLORMAP = {"R": [RED, "Robot"],
-            "*": [PINK, "Previous Path"],
+            "*": [LIGHTRED, "Previous Path"],
             " ": [WHITE, "Free Space"],
             "F": [GREEN, "Frontier Cell"],
             ".": [LIGHTGREEN, "Next Path"],
@@ -57,7 +59,10 @@ class GraphicsWindow:
         plt.legend(handles=color_patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
         plt.title('Robot Map\nTimestep = ' + str(timestep))
-        plt.show()
+        #plt.show()
+        plt.savefig(os.getcwd() + '/Frames/Frame_' + str(timestep) + '.png')
+
+
         
         
         
