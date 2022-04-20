@@ -4,17 +4,19 @@ from graphics import GraphicsWindow
                 
 def main():
     g = Grid()
-    g.read_Grid('layout1.txt')
+    g.read_Grid('layout2.txt')
     # g.plot_grid()
+    timestep = 0
     while True:
         x = g.update_grid()
 
         graphics = GraphicsWindow(g.dynamic_grid)
-        graphics.show_env()
-        # print()
+        graphics.show_env(timestep)
 
         if x == None:
             break
+
+        timestep += 1
 
 if __name__ == "__main__":
     main()

@@ -13,6 +13,7 @@ class Robot:
         self.grid = grid
         self.seen = dict()
         self.path = set()
+        self.prev_path = set()
         self.frontier = None
         
     def get_frontier(self):
@@ -53,18 +54,24 @@ class Robot:
 
     def get_frontier_path(self):
         self.frontier = self.get_frontier()
+        self.prev_path = self.path
         self.path = self.create_path(self.frontier)
 
 
     def create_path(self, goal):
-        goal = (goal[1], goal[0])
-        start = (self.pos[1], self.pos[0])
-        path = astar(self.grid, start, goal)
+        if goal:
+            goal = (goal[1], goal[0])
+            start = (self.pos[1], self.pos[0])
+            path = astar(self.grid, start, goal)
 
-        for i, pt in enumerate(path):
-            path[i] = (pt[1], pt[0])
+            for i, pt in enumerate(path):
+                path[i] = (pt[1], pt[0])
+            
+            path = set(path)
+        else:
+            path = set()
 
-        return set(path)
+        return path
 
     def explore(self):
         if self.frontier: 

@@ -27,6 +27,9 @@ class Grid:
                 elif pt in rob.path:
                     print(".", end = "")
                     self.dynamic_grid[y][x] = "."
+                elif pt in rob.prev_path:
+                    print("*", end = "")
+                    self.dynamic_grid[y][x] = "*"
                 elif pt in rob.seen:
                     if rob.seen[pt] == c.FREE:
                         print(" ", end="")
