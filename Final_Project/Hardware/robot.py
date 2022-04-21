@@ -94,8 +94,9 @@ class Robot:
         if self.frontier:
             #self.pos = self.frontier # teleport robot
             sorted_path = self.sort_path(self.path, self.pos)
-            self.pos = sorted_path[1]
-            return self.frontier
+            # self.pos = sorted_path[-1]
+            # return self.frontier
+            return sorted_path[-1]
         else:
             print("Map finished")
             return None

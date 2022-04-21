@@ -5,19 +5,20 @@ from graphics import GraphicsWindow
                 
 def main():
     g = Grid()
-    g.read_Grid('Layouts/layout1_int.txt')
-    # g.plot_grid()
-    timestep = 0
-    while True:
-        frontier = g.update_grid()
+    g.define_grid(grid, robots)
+    frontier = g.get_frontier_pos()
 
-        graphics = GraphicsWindow(g.dynamic_grid)
-        graphics.show_env(timestep)
+    # timestep = 0
+    # while True:
+    #     frontier = g.get_frontier_pos()
 
-        if frontier == None:
-            break
+    #     graphics = GraphicsWindow(g.dynamic_grid)
+    #     graphics.show_env(timestep)
 
-        timestep += 1
+    #     if frontier == None:
+    #         break
+
+    #     timestep += 1
     
 if __name__ == "__main__":
     main()
