@@ -92,7 +92,7 @@ class Robot:
 
     def explore(self):
         if self.frontier:
-            #self.pos = self.frontier
+            #self.pos = self.frontier # teleport robot
             sorted_path = self.sort_path(self.path, self.pos)
             self.pos = sorted_path[1]
             return self.frontier
