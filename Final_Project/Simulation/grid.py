@@ -8,7 +8,7 @@ class Grid:
         self.robots = []
         self.grid = np.array([[]])
         self.dynamic_grid = np.array([[]])
-        
+    
     def update_grid(self): 
         rob = self.robots[0]
 
