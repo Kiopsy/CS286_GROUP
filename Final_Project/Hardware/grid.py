@@ -16,24 +16,25 @@ class Grid:
     #     rob.get_frontier_path()
     #     rob.explore()
 
-    def get_frontier_pos(self):
-        rob = self.robots[0]
+    def get_frontier_pos(self, rob):
         rob.get_frontier_path()
         rob.explore()
+        return rob.frontier
 
 
     def define_grid(self, grid, robots):
         self.grid = grid
 
         known = np.where(grid != c.UNEXPLORED)
-        known = list(zip(known[1], known[0]))
+        cols = known[1]
+        rows = known[0]
+        known = list(zip(cols, rows))
 
+       
         seen = dict()
 
-        for x, y in known: 
-            seen[(x,y)] = grid[x][y]
+        for col, row in known: 
+            seen[(col,row)] = grid[row][col]
 
-        for x, y in robots: 
-            r = Robot(x, y, grid)
-            r.seen = seen
-            self.robots.append(Robot(x, y, grid))
+        for col, row in robots: 
+            self.robots.append(Robot(col, row, grid, seen))

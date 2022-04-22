@@ -3,18 +3,43 @@ from bresenham import bresenham
 from astar import astar
 from constants import c
 
-
+SENSING_RADIUS = 4
+FRONTIER_SIZE = 25
 
 class Robot: 
-    def __init__(self, x, y, grid):
+    def __init__(self, x, y, grid, seen):
         self.pos = (x, y)
-        self.radius = 4
+        self.radius = SENSING_RADIUS
         self.side = 2 * self.radius + 1
         self.grid = grid
-        self.seen = dict()
+        self.seen = seen
         self.path = set()
         self.prev_path = set()
         self.frontier = None
+    
+    def is_big(self, pt):
+
+        x, y = pt
+
+        size = FRONTIER_SIZE
+
+        half = size // 2
+
+        new_points = 0
+
+        for i in range(x - half, x + half):
+            for j in range(y - half, y + half):
+                try:
+                    space = self.grid[y+j][x+i]
+                except:
+                    continue
+            
+                if (x+i, y+j) in self.seen:
+                    new_points += 1
+        
+        return new_points > (size**2) * (1/3)
+
+
         
     def get_frontier(self):
         Q = [self.pos]
@@ -35,7 +60,7 @@ class Robot:
             
             if space != c.WALL:
 
-                if n not in self.seen:
+                if n not in self.seen and self.is_big(n):
                     return n
 
                 # NOTE: May need to handle case where edges are not walls
@@ -59,9 +84,9 @@ class Robot:
         self.prev_path = self.path
         self.path = self.create_path(self.frontier)
 
+    # Return euclidean distance
     def distance(self, point1, point2):
-        # Return Euclidean distance between two points
-        return ((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2) ** (1 / 2)
+        return math.sqrt( math.pow(point2[0] - point1[0], 2) + math.pow(point2[1] - point1[1], 2) )
 
 
     def sort_path(self, points, start):
@@ -78,11 +103,12 @@ class Robot:
 
     def create_path(self, goal):
         if goal:
-            goal = (goal[1], goal[0])
-            start = (self.pos[1], self.pos[0])
+            goal = goal[::-1]
+            start = self.pos[::-1]
             path = astar(self.grid, start, goal)
+
             for i, pt in enumerate(path):
-                path[i] = (pt[1], pt[0])
+                path[i] = pt[::-1]
             
             path = set(path)
         else:
