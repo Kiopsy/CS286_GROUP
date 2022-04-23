@@ -18,23 +18,27 @@ class Grid:
 
     def get_frontier_pos(self, rob):
         rob.get_frontier_path()
-        rob.explore()
+        return rob.explore()
         return rob.frontier
 
 
     def define_grid(self, grid, robots):
         self.grid = grid
 
+        if grid is None:
+            print("no grid")
+            return
+
         known = np.where(grid != c.UNEXPLORED)
-        cols = known[1]
-        rows = known[0]
+        print(known)
+        rows, cols = known
         known = list(zip(cols, rows))
 
        
         seen = dict()
 
-        for col, row in known: 
+        for col, row in known:     
             seen[(col,row)] = grid[row][col]
-
+        
         for col, row in robots: 
             self.robots.append(Robot(col, row, grid, seen))

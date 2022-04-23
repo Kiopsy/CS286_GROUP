@@ -4,7 +4,7 @@ from astar import astar
 from constants import c
 
 SENSING_RADIUS = 4
-FRONTIER_SIZE = 25
+FRONTIER_SIZE = 40
 
 class Robot: 
     def __init__(self, x, y, grid, seen):
@@ -25,25 +25,34 @@ class Robot:
 
         half = size // 2
 
-        new_points = 0
+        new_points = total = 0.0
 
         for i in range(x - half, x + half):
             for j in range(y - half, y + half):
                 try:
-                    space = self.grid[y+j][x+i]
+                    space = self.grid[j][i]
                 except:
                     continue
             
-                if (x+i, y+j) in self.seen:
-                    new_points += 1
+                if (i, j) not in self.seen:
+                    new_points += 1.0
+                total += 1.0
         
-        return new_points > (size**2) * (1/3)
+        return new_points >= total*0.9
+
 
 
         
     def get_frontier(self):
         Q = [self.pos]
         V = set()
+
+        # for i in range(self.grid.shape[0]):
+        #     for j in range(self.grid.shape[1]):
+        #         if self.is_big((j,i)):s
+        #             print("big: ", (j,i))
+        #             return (j,i)
+        # print("couldn't find big")
 
         while len(Q) != 0:
             n = Q.pop(0)
@@ -61,13 +70,15 @@ class Robot:
             if space != c.WALL:
 
                 if n not in self.seen and self.is_big(n):
+                    print("big: ", n)
                     return n
 
                 # NOTE: May need to handle case where edges are not walls
-
-                Q.append((x - 1, y))
+                if x > 0:
+                    Q.append((x - 1, y))
                 Q.append((x + 1, y))
-                Q.append((x, y - 1))
+                if y > 0:
+                    Q.append((x, y - 1))
                 Q.append((x, y + 1))
 
                 # Q.append((x - 1, y - 1))
@@ -76,7 +87,7 @@ class Robot:
                 # Q.append((x + 1, y + 1))
             else:
                 pass
-
+        
         return None
 
     def get_frontier_path(self):
@@ -86,7 +97,7 @@ class Robot:
 
     # Return euclidean distance
     def distance(self, point1, point2):
-        return math.sqrt( math.pow(point2[0] - point1[0], 2) + math.pow(point2[1] - point1[1], 2) )
+        return math.sqrt(math.pow(point2[0] - point1[0], 2) + math.pow(point2[1] - point1[1], 2))
 
 
     def sort_path(self, points, start):
@@ -122,7 +133,11 @@ class Robot:
             sorted_path = self.sort_path(self.path, self.pos)
             # self.pos = sorted_path[-1]
             # return self.frontier
-            return sorted_path[-1]
+            try:
+                cell = sorted_path[-10]
+            except:
+                cell = sorted_path[-1]
+            return cell
         else:
             print("Map finished")
             return None

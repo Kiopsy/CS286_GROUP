@@ -71,7 +71,8 @@ def astar(maze, start, end):
                 continue
 
             # Make sure walkable terrain
-            if maze[node_position[0]][node_position[1]] == c.WALL:
+            #if maze[node_position[0]][node_position[1]] == c.WALL:
+            if maze[node_position[0]][node_position[1]] > c.FREE:
                 continue
 
             # Create new node

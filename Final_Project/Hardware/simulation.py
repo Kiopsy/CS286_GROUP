@@ -38,7 +38,7 @@ def main():
     for robot in g.robots:
         frontier = g.get_frontier_pos(robot)
         # Ensure that each frontier is unique
-        while frontier not in frontiers:
+        while frontier in frontiers:
             frontier = g.get_frontier_pos(robot)
         frontiers.append(frontier)
         print(frontier)

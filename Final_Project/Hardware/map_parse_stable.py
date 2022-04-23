@@ -19,23 +19,14 @@ from move_base_msgs.msg import MoveBaseAction , MoveBaseGoal
 counter = 0
 
 class PhysicalMap:
-    def __init__(self, robot_names):
-        rospy.init_node('map_parser')
-        #self.m = MoveActions(robot_name)
-        #self.robot_name = robot_name 
+    def __init__(self, robot_name):
+        rospy.init_node('map_parser_' + str(robot_name)) 
+        self.m = MoveActions(robot_name)
+        self.robot_name = robot_name 
         # ADDED
-        self.robot_names = robot_names
-        if len(robot_names) > 1:
-            self.cost_mp_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid, self.parse_cost_map_cb)
-            self.mp_sub = rospy.Subscriber('/rtabmap/grid_map', OccupancyGrid, self.parse_map_cb, queue_size=1)
-        else:
-            robot_name = robot_names[0]
-            self.cost_mp_sub = rospy.Subscriber('/' + str(robot_name) + '/move_base/global_costmap/costmap', OccupancyGrid, self.parse_cost_map_cb)
-            self.mp_sub = rospy.Subscriber('/' + str(robot_name) + '/rtabmap/grid_map', OccupancyGrid, self.parse_map_cb, queue_size=1)
-        self.move_actions = self.loc_subs = self.pos_xs = self.pos_ys = self.ixs = self.iys = []
-        for robot_name in self.robot_names:
-            self.move_actions.append(MoveActions(robot_name))
-            self.loc_subs.append(rospy.Subscriber('/'+ str(robot_name) + '/mobile_base/odom', Odometry, self.parse_loc_cb))
+        self.mp_sub = rospy.Subscriber('/'+ str(robot_name) +'/rtabmap/grid_map', OccupancyGrid, self.parse_map_cb, queue_size=1)
+        self.cost_mp_sub = rospy.Subscriber('/'+ str(robot_name) +'/move_base/global_costmap/costmap', OccupancyGrid, self.parse_cost_map_cb)
+        self.loc_sub = rospy.Subscriber('/'+str(robot_name) + '/mobile_base/odom', Odometry, self.parse_loc_cb)
         self.timeout = 60.0
         self.w = None
         self.cost_w = None
@@ -45,57 +36,14 @@ class PhysicalMap:
         self.cost_map_origin = None
         self.origin_theta = None
         self.cost_origin_theta = None
+        self.pos_x, self.pos_y = None, None
+        self.ix, self.iy = None, None
         self.mtr_per_cell_map = None
         self.cost_mtr_per_cell_map = None
         # ADDED
         self.map2d = None
         self.cost_map = None
         self.merged_map = None
-        self.frontiers = []
-
-    def plot(self):
-        plot_map = self.map2d
-        frontiers = self.frontiers
-        locs = self.get_loc_in_grid()
-        if len(locs) != 0:
-            for loc in locs:
-                # Flipping here too because we flipped in get_loc_in_grid
-                if not loc is None:
-                    iy, ix = loc
-                    loc = self.grid_to_real((ix, iy))
-                    #print((self.pos_x, self.pos_y), loc)
-                    for i in range(5):
-                        for j in range(5):
-                            try:
-                                plot_map[ix + i][iy+j] = 101.0
-                            except:
-                                print("out of bounds")
-
-        for frontier in self.frontiers:
-            #gx, gy = None, None
-            if not frontier is None:
-                fx, fy = frontier # in grid, map[fx][fy]
-                for i in range(5):
-                    for j in range(5):
-                        plot_map[fx + i][fy + j] = 3001.0
-                #gx, gy = self.grid_to_real((fx, fy))
-    #            if counter % 4 == 0:
-    #                pd.DataFrame(plot_map).to_csv("map" + str(counter/4)+".csv")
-        plot_map = np.flipud(plot_map)
-            
-        # plot map
-        cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red', 'yellow'])
-        bounds = [-1.0, 0.0, 5.0, 101.0, 3000.0, 10000.0]
-        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-        
-        # tell imshow about color map so that only set colors are used
-        img = plt.imshow(plot_map, interpolation='nearest', cmap=cmap,norm=norm)
-        
-        # make a color bar
-            
-        plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
-        
-        plt.show()
     
     # ADDED
     def parse_cost_map_cb(self, msg):
@@ -107,10 +55,12 @@ class PhysicalMap:
         map_arr = np.array(msg.data, np.float) # 1D array describing map
         self.cost_map = map_arr.reshape((self.cost_h, self.cost_w)) # reshape to 2D array
         self.merged_map = self.cost_map
+        self.merged_map[self.map2d == c.UNEXPLORED] = c.UNEXPLORED
 
     def parse_map_cb(self, msg):
+        global counter
+        print(msg.info)
         self.map_origin = (-msg.info.origin.position.y, msg.info.origin.position.x)
-        print("MAP ORIGIN", self.map_origin)
         self.origin_theta = msg.info.origin.orientation.z
         self.w, self.h = msg.info.width, msg.info.height # the width and height of map in terms of number of cells
         self.mtr_per_cell_map = msg.info.resolution # the edge size of a cell in meters 
@@ -118,16 +68,59 @@ class PhysicalMap:
         map_arr = np.array(msg.data, np.float) # 1D array describing map
         self.map2d = map_arr.reshape((self.h, self.w)) # reshape to 2D array
         #self.map2d = self.merged_map
-        while self.map2d is None:
-            try:
-                self.merged_map[self.map2d == c.UNEXPLORED] = c.UNEXPLORED
-            except:
-                print('waiting for map2d')
+        plot_map = self.map2d
+        
+        # if not self.merged_map is None:
+        #     plot_map = self.merged_map
+        
+
+
+        counter += 1
+        if counter % 1 == 0:
+            locs = self.get_loc_in_grid()
+            print("grid loc: ", locs)
+            if locs != None:
+                ix, iy = locs
+                loc = self.grid_to_real((ix, iy))
+                print((self.pos_x, self.pos_y), loc)
+                for i in range(5):
+                    for j in range(5):
+                        try:
+                            plot_map[ix + i][iy+j] = 101.0
+                        except:
+                            print("out of bounds")
+            
+            frontier = self.find_frontier()
+            gx, gy = None, None
+            if not frontier is None:
+                fx, fy = frontier # in grid, map[fx][fy]
+                for i in range(5):
+                    for j in range(5):
+                        plot_map[fx + i][fy + j] = 3001.0
+                gx, gy = self.grid_to_real((fx, fy))
+#            if counter % 4 == 0:
+#                pd.DataFrame(plot_map).to_csv("map" + str(counter/4)+".csv")
+
+            plot_map = np.flipud(plot_map)
+            
+            # plot map
+            cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red', 'yellow'])
+            bounds = [-1.0, 0.0, 5.0, 101.0, 3000.0, 10000.0]
+            norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+            
+            # tell imshow about color map so that only set colors are used
+            img = plt.imshow(plot_map, interpolation='nearest', cmap=cmap,norm=norm)
+            
+            # make a color bar
+             
+            plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
+            
+            plt.show()
             
 
             # ADDED
-            #if not gx is None:
-            #   self.m.send_goal((gx,gy), 0)
+            if not gx is None:
+               self.m.send_goal((gx,gy), 0)
 
             # if not self.map2d is None or not self.cost_map is None or not self.merged_map is None and not gx is None:
             
@@ -145,67 +138,64 @@ class PhysicalMap:
 
     def parse_loc_cb(self, msg):
         # this position is with respect to /odom
-        pos_y, pos_x = msg.pose.pose.position.x, -msg.pose.pose.position.y
-        self.pos_ys.append(pos_y)
-        self.pos_xs.append(pos_x)
-
+        self.pos_y, self.pos_x = msg.pose.pose.position.x, -msg.pose.pose.position.y
         # parse into grid position
         # print("robot positions: ", self.pos_x, self.pos_y)
 
-    def find_frontiers(self):
+    def find_frontier(self):
         g = Grid()
-        robot_positions = self.get_loc_in_grid()
-        print("RPOS", robot_positions)
-        if len(robot_positions) != 0:
-            g.define_grid(self.get_grid(), robot_positions)
+        if self.get_loc_in_grid() == None:
+            return None
+        ix, iy = self.get_loc_in_grid()
+        robot_positions = [(iy, ix)]
+        g.define_grid(self.get_grid(), robot_positions)
         
-            for robot in g.robots:
-                y, x = g.get_frontier_pos(robot)
-                frontier = x, y
-                if not frontier is None:
-                    self.frontiers.append(frontier)
-                    print("frontier: ", frontier)
+        frontier = g.get_frontier_pos(g.robots[0])
+        if not frontier is None:
+            y, x = frontier
+            frontier = (x,y)
+            '''
+            cost_map = self.cost_map
+            if cost_map[y][x] > SOME_THRESHOLD:
+                return frontier
+            else:
+                new_grid = self.get_grid()
+                new_grid[y][x] = 0
+                self.find_frontier(new_grid)
+                # Change def to include new_grid and define g with new_grid (maybe redefine self.map2d?)
+            '''
+
+            print("frontier: ", frontier)
+            return frontier
 
     # get the robot location in the grid, in the format (i,j)
     # where i is the row, j is the column
     # the robot cell is map[i][j]
     def get_loc_in_grid(self):
-        pos = list(zip(self.pos_xs, self.pos_ys))
-        rel_pos = []
+        if self.map_origin == None:
+            print("map origin unknown")
+            return None
+        
+        if self.pos_x == None:
+            print("robot pos unknown")
+            return None
 
-        if self.map_origin is None:
-            return rel_pos
-            raise ValueError("map origin unknown 1")
-
-        if self.mtr_per_cell_map is None:
-            return rel_pos
-            raise ValueError("map resolution unknown")
-
+        if self.mtr_per_cell_map == None:
+            print("map resolution unknown")
+            return None
         ox, oy = self.map_origin
-
-        for pos_x, pos_y in pos:
-
-            if pos_x is None or pos_y is None:
-                return rel_pos
-                raise ValueError("robot pos unknown")
-
-            rel_x, rel_y = pos_x - ox, pos_y - oy  # calculate position relative to the map origin 
-            
-            print("origin: ", ox, oy)
-            print("pos: ", self.pos_x, self.pos_y)
-            res = self.mtr_per_cell_map
-            ix, iy = int(-rel_x/res), int(rel_y/res)
-            self.ixs.append(ix)
-            self.iys.append(iy)
-            # Switching here because we were switching the order of robot_pos in define_grid(robot_pos) anyway
-            rel_pos.append((iy, ix))
-        return rel_pos # in terms of integer
+        rel_x, rel_y = self.pos_x - ox, self.pos_y - oy  # calculate position relative to the map origin 
+        
+        print("origin: ", ox, oy)
+        print("pos: ", self.pos_x, self.pos_y)
+        res = self.mtr_per_cell_map
+        return (int(-rel_x/res), int(rel_y/res)) # in terms of integer
 
     def get_grid(self):
         # ADDED
-        return self.merged_map
+        # return self.merged_map
         # Uncomment below if not using merged map (cost map with unknowns)
-        #return self.map2d
+        return self.map2d
 
     # convert a grid coordinate (i,j) into real coordinates
     # where i is the row, j is the column
@@ -232,7 +222,7 @@ class MoveActions:
     def __init__(self, robot_name):
 
         self.robot_name = robot_name
-        self.client = actionlib.SimpleActionClient("/"+ str(self.robot_name) + "/move_base", MoveBaseAction)
+        self.client = actionlib.SimpleActionClient("/"+str(robot_name) + "/move_base", MoveBaseAction)
         self.timeout = 60 #secs
         self.step_size = 1.0
         
@@ -242,7 +232,7 @@ class MoveActions:
 
         #Initialize the variable for the goal
         self.goal = MoveBaseGoal()
-        self.goal.target_pose.header.frame_id = str(self.robot_name) + "/map"
+        self.goal.target_pose.header.frame_id = robot_name + "/map"
 
         self.pub = rospy.Publisher("/" + str(self.robot_name)+"/move_base/current_goal", PoseStamped, queue_size=1)
 
@@ -299,45 +289,41 @@ class MoveActions:
 
 def main():
 
-    mp = PhysicalMap(["locobot3"])
-    while mp.map_origin is None:
-        try:
-            mp.find_frontiers()
-        except ValueError as e:
-            print(e)
-        
-    #mp.plot()
-    # While there is some frontier left to explore
-    print("FRONTIERS INTI", mp.frontiers)
-    while any(not f is None for f in mp.frontiers):
-        print("FRONTIERS", mp.frontiers)
-        for i, move_action in enumerate(mp.move_actions):
-            '''
-            while mp.map2d is None or mp.cost_map is None or mp.merged_map is None:
-                try:
-                    # send robot position (to make robot stay in place)
-                    move_action.client.sleep(0.5)
-                except:
-                    print("coulnd't send goal 1")
-            '''
-
-            if not mp.frontiers[i] is None:
-                try:
-                    print(self.goal)
-                    move_action.client.send_goal(move_action.goal)
-                    wait = move_action.client.wait_for_result(rospy.Duration(self.timeout))
-                except:
-                    print("coulnd't send goal 2")
-        mp = PhysicalMap(["locobot3"])
-        mp.find_frontiers()
-
-
+    mp = PhysicalMap("locobot3")
     '''
-    maps = [PhysicalMap("locobot3")]
-    #global_map_sub = TODO
+    # ADDED
+    maps = [PhysicalMap("locobot3", "locobot4")]
+    global_map_sub = TODO
     # Will need to add a map_sub and cost_map_sub arg (for global map) to PhysicalMap object
     maps = [PhysicalMap("locobot3", global_map_sub, global_cost_map_sub), PhysicalMap("locobot4", global_map_sub, global_cost_map_sub)]
     for map in maps:
+        frontier = map.find_frontier()
+        gx, gy = None, None
+        if not frontier is None:
+            fx, fy = frontier # in grid, map[fx][fy]
+            for i in range(5):
+                for j in range(5):
+                    plot_map[fx + i][fy + j] = 3001.0
+            gx, gy = self.grid_to_real((fx, fy))
+#           if counter % 4 == 0:
+#               pd.DataFrame(plot_map).to_csv("map" + str(counter/4)+".csv")
+
+        plot_map = np.flipud(plot_map)
+        
+        # plot map
+        cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red', 'yellow'])
+        bounds = [-1.0, 0.0, 5.0, 101.0, 3000.0, 10000.0]
+        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+        
+        # tell imshow about color map so that only set colors are used
+        img = plt.imshow(plot_map,interpolation='nearest', cmap = cmap,norm=norm)
+        
+        # make a color bar
+            
+        plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
+        
+        plt.show()
+
         client = map.m.client
         while map.map2d is None or map.cost_map is None or map.merged_map is None:
             try:
@@ -353,13 +339,7 @@ def main():
                 print("coulnd't send goal")
     
     '''
-
-    #TODO (04/22)
-    # Clean up error flow/logic, especially when origin isn't found/robot pos are unknown. Do we want to return empty list, [None, ...], or something else?
-    # Fix logic for initial
-    # Test with two robots, figure out exact topics
-
-
+    
     rospy.spin()
 
 
