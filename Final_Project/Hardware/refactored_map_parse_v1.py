@@ -4,8 +4,6 @@ import pandas as pd
 import tf
 
 import sys
-import copy
-import math
 
 import actionlib
 from constants import c
@@ -35,11 +33,11 @@ class ROSMap:
     
     # convert grid coordinates to real coordinates
     def grid_to_real(self, pos):
-        row, col = pos # NOTE might need to change this order
-        row = -row
+        gx, gy = pos 
+        gx = -gx
 
         # find location (x,y) in meters relative to the map
-        mx, my = row * self.resolution, col * self.resolution 
+        mx, my = gx * self.resolution, gy * self.resolution 
         ox, oy = self.origin
 
         # shift by map origin to get location with respect to the global frame
@@ -51,31 +49,22 @@ class ROSMap:
         ox, oy = self.origin
 
         mx, my = rx - ox, ry - oy  # calculate position relative to the map origin 
-        print("m cord: ", (mx, my))
-        row, col = int(-round(mx/self.resolution)), int(round(my/self.resolution))
+        ix, iy = int(-rel_x/self.resolution), int(rel_y/self.resolution)
 
-        return (row, col) # we need to index into the grid as grid[iy][ix]
+        return (ix, iy) # we need to index into the grid as grid[iy][ix]
 
-    def merge(m,c_map):
-        assert(m.w == c_map.w and m.h == c_map.h)
-        c_map = copy.deepcopy(c_map)
-        c_map.grid[m.grid == c.UNEXPLORED] = c.UNEXPLORED
-
-        return c_map
-
-    def plot(self, timestep=0, robot_pos=None, frontier_pos=None, real_pos=True):
+    def plot(self, robot_pos=None, frontier_pos=None, real_pos=True):
         plot_map = np.copy(self.grid)
 
         # add robot position to the map
         if not robot_pos is None:
             if real_pos:
                 robot_pos = self.real_to_grid(robot_pos)
-                print("grid pos: ", robot_pos)
-            row, col = robot_pos
-            for i in range(row - 5, row + 5):
-                for j in range(col - 5, col + 5):
+            iy, ix = robot_pos
+            for i in range(5):
+                for j in range(5):
                     try:
-                        plot_map[i][j] = 101.0
+                        plot_map[ix + i][iy+j] = 101.0
                     except:
                         print("out of bounds")
         
@@ -83,11 +72,11 @@ class ROSMap:
         if not frontier_pos is None:
             if real_pos:
                 frontier_pos = self.real_to_grid(frontier_pos)
-            row, col = frontier_pos
-            for i in range(row - 5, row + 5):
-                for j in range(col - 5, col + 5):
+            iy, ix = frontier_pos
+            for i in range(5):
+                for j in range(5):
                     try:
-                        plot_map[i][j] = 3001.0
+                        plot_map[ix + i][iy+j] = 3000.0
                     except:
                         print("out of bounds")
         
@@ -102,10 +91,9 @@ class ROSMap:
         img = plt.imshow(plot_map, interpolation='nearest', cmap=cmap,norm=norm)
         
         # make a color bar 
-        # plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
+        plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
         
-        # plt.show()
-        plt.savefig('Frames/Map_' + str(timestep) + '.png')
+        plt.show()
 
 # RobotDriver
 # this class manages all the ROS interactions, reading maps,
@@ -116,7 +104,7 @@ class RobotDriver:
         
         # initialize everything required for moving the robot to a goal
         self.client = actionlib.SimpleActionClient("/"+ str(self.robot_name) + "/move_base", MoveBaseAction)
-        self.timeout = 15.0 # in seconds
+        self.timeout = 60.0 # in seconds
         
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = str(self.robot_name) + "/map"
@@ -125,7 +113,7 @@ class RobotDriver:
         print("Waiting for action lib server: /" + str(self.robot_name) + "/move_base")
         self.client.wait_for_server()
 
-        self.map = self.cost_map = self.merged_map = None
+        self.map = self.cost_map = None
         
         self.costmap_sub = rospy.Subscriber('/' + str(robot_name) + '/move_base/global_costmap/costmap', OccupancyGrid, self.parse_costmap)
         self.map_sub = rospy.Subscriber('/' + str(robot_name) + '/rtabmap/grid_map', OccupancyGrid, self.parse_map)
@@ -143,7 +131,7 @@ class RobotDriver:
 
     # the callback for the odometry subscriber
     def parse_odom(self, msg):
-        self.pos = (-msg.pose.pose.position.y, msg.pose.pose.position.x)
+        self.pos = (msg.pose.pose.position.x, -msg.pose.pose.position.y)
 
     # the method for sending goal to the robot
     def send_goal(self, pos, angle):
@@ -166,14 +154,7 @@ class RobotDriver:
         print("Goal: ", self.goal)
 
         self.client.send_goal(self.goal)
-        rospy.sleep(1.0)
-        # wait = self.client.wait_for_result(rospy.Duration(self.timeout))
-        
-        # if not wait:
-        #     print("didnt finish before timeout")
-        # else:
-        #     print("finished goal")
-
+        wait = self.client.wait_for_result(rospy.Duration(self.timeout))
 
     # use this to get the map, because it waits until the map is initialized
     def get_map(self):
@@ -198,22 +179,6 @@ class RobotDriver:
                 sys.exit(1)
                 break
         return self.costmap
-
-    def get_mergedmap(self):
-        self.get_map()
-        self.get_costmap()
-        num_sleep = 0
-        while self.map.w != self.costmap.w or self.map.h != self.costmap.h:
-            print("[{}] map and costmap are not the same size ({} x {}) ({} x {})! going to sleep...".format(num_sleep, \
-             self.map.w, self.map.h, self.costmap.w, self.costmap.h))
-            rospy.sleep(1)
-            num_sleep += 1
-            if rospy.is_shutdown():
-                sys.exit(1)
-                break
-        self.merged_map = ROSMap.merge(self.map, self.costmap)
-        return self.merged_map
-
     
     # use this to get the pos, because it waits until the pos is initialized
     def get_pos(self):
@@ -227,59 +192,46 @@ class RobotDriver:
                 break
         return self.pos
 
+class PhysicalMap:
+    def __init__(self, robot_names):
+        #self.m = MoveActions(robot_name)
+        #self.robot_name = robot_name 
+        # ADDED
+        self.robot_names = robot_names
+        
+        # ADDED
+        self.frontiers = []
+
+    def find_frontiers(self):
+        g = Grid()
+        robot_positions = self.get_loc_in_grid()
+        print("RPOS", robot_positions)
+        if len(robot_positions) != 0:
+            g.define_grid(self.get_grid(), robot_positions)
+        
+            for robot in g.robots:
+                y, x = g.get_frontier_pos(robot)
+                frontier = x, y
+                if not frontier is None:
+                    self.frontiers.append(frontier)
+                    print("frontier: ", frontier)
+
+    # get the robot location in the grid, in the format (i,j)
+    # where i is the row, j is the column
+    # the robot cell is map[i][j]
+   
+
 
 def main():
     rospy.init_node("map_parser")
 
     ros_robot = RobotDriver("locobot1")
-
-    iter = 0
-    while True:
-        robot_pos = ros_robot.get_pos()
-        print("robot_pos", robot_pos)
-        m = ros_robot.get_mergedmap()
-
-        g = Grid()
-        row, col = m.real_to_grid(robot_pos) # convert pos to grid coordinates
-
-        area = 3
-        for i in range(row - area, row + area):
-            for j in range(col - area, col + area):
-                try:
-                    m.grid[i][j] = 0.0
-                except:
-                    continue
-
-        g.define_grid(m.grid, [(col, row)])
-
-        frontiers = g.get_frontier_pos(g.robots[0])
-        
-        if frontier is None:
-            print("no frontier")
-            m.plot(robot_pos=robot_pos, timestep=iter)
-        else:
-            idx = 0
-            # See if there is any way to determine this
-            while (frontier is not accessible):
-                fcol, frow = frontier[i]
-
-            print("frontier:", m.grid_to_real((frow, fcol)))
-            frontier_real = m.grid_to_real((frow, fcol))
-
-            angle = math.atan2(frontier_real[1]-robot_pos[1], frontier_real[0]-robot_pos[0])
-            angle -= math.pi/2.0
-            
-            m.plot(robot_pos=robot_pos, frontier_pos=m.grid_to_real((frow, fcol)), timestep=iter)
-            ros_robot.send_goal(m.grid_to_real((frow, fcol)), angle)
-            
-
-
-        if rospy.is_shutdown():
-            sys.exit(0)
-        iter += 1
+    # while True:
+    print(ros_robot.get_map().grid)
+    print(ros_robot.get_costmap().grid)
+    print(ros_robot.get_pos())
     
-
-
+    ros_robot.send_goal((1,0), 0)
 
     rospy.spin()
 

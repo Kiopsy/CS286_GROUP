@@ -19,8 +19,10 @@ class Grid:
     def get_frontier_pos(self, rob):
         rob.get_frontier_path()
         return rob.explore()
-        return rob.frontier
+        # return rob.frontier
 
+    def get_frontier(self, rob):
+        return rob.get_frontier()
 
     def define_grid(self, grid, robots):
         self.grid = grid
@@ -30,7 +32,7 @@ class Grid:
             return
 
         known = np.where(grid != c.UNEXPLORED)
-        print(known)
+        # print(known)
         rows, cols = known
         known = list(zip(cols, rows))
 

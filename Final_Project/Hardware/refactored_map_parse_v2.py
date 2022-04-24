@@ -72,10 +72,10 @@ class ROSMap:
                 robot_pos = self.real_to_grid(robot_pos)
                 print("grid pos: ", robot_pos)
             row, col = robot_pos
-            for i in range(row - 5, row + 5):
-                for j in range(col - 5, col + 5):
+            for i in range(5):
+                for j in range(5):
                     try:
-                        plot_map[i][j] = 101.0
+                        plot_map[row + i][col+j] = 101.0
                     except:
                         print("out of bounds")
         
@@ -84,10 +84,10 @@ class ROSMap:
             if real_pos:
                 frontier_pos = self.real_to_grid(frontier_pos)
             row, col = frontier_pos
-            for i in range(row - 5, row + 5):
-                for j in range(col - 5, col + 5):
+            for i in range(5):
+                for j in range(5):
                     try:
-                        plot_map[i][j] = 3001.0
+                        plot_map[row + i][col+j] = 3001.0
                     except:
                         print("out of bounds")
         
@@ -236,6 +236,7 @@ def main():
     iter = 0
     while True:
         robot_pos = ros_robot.get_pos()
+        p = (5, 6)
         print("robot_pos", robot_pos)
         m = ros_robot.get_mergedmap()
 
@@ -252,17 +253,13 @@ def main():
 
         g.define_grid(m.grid, [(col, row)])
 
-        frontiers = g.get_frontier_pos(g.robots[0])
+        frontier = g.get_frontier_pos(g.robots[0])
         
         if frontier is None:
             print("no frontier")
             m.plot(robot_pos=robot_pos, timestep=iter)
         else:
-            idx = 0
-            # See if there is any way to determine this
-            while (frontier is not accessible):
-                fcol, frow = frontier[i]
-
+            fcol, frow = frontier
             print("frontier:", m.grid_to_real((frow, fcol)))
             frontier_real = m.grid_to_real((frow, fcol))
 

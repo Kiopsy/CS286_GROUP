@@ -2,10 +2,12 @@ import math
 from bresenham import bresenham
 from astar import astar
 from constants import c
+import random
 
 SENSING_RADIUS = 4
-FRONTIER_SIZE = 40
-
+FRONTIER_SIZE = 20
+MIN_FRONTIER_DISTANCE = 0
+MAX_FRONTIER_LEN = 20
 class Robot: 
     def __init__(self, x, y, grid, seen):
         self.pos = (x, y)
@@ -54,9 +56,12 @@ class Robot:
         #             return (j,i)
         # print("couldn't find big")
 
-        while len(Q) != 0:
-            n = Q.pop(0)
+        found_frontiers = []
 
+        while len(Q) != 0 and len(found_frontiers) < MAX_FRONTIER_LEN:
+            
+            n = Q.pop(0)
+            
             if n in V: continue
             else: V.add(n)
 
@@ -67,16 +72,24 @@ class Robot:
             except:
                 continue
             
-            if space != c.WALL:
+            if space <= c.FREE:
 
                 if n not in self.seen and self.is_big(n):
-                    print("big: ", n)
-                    return n
+                    min_dist = 1e9
+                    
+                    for f in found_frontiers:
+                        if self.distance(f, n) < min_dist:
+                            min_dist = self.distance(f,n)
+
+                    if min_dist > MIN_FRONTIER_DISTANCE:
+                        found_frontiers.append(n)
+                    # return n
 
                 # NOTE: May need to handle case where edges are not walls
                 if x > 0:
                     Q.append((x - 1, y))
                 Q.append((x + 1, y))
+                
                 if y > 0:
                     Q.append((x, y - 1))
                 Q.append((x, y + 1))
@@ -86,8 +99,11 @@ class Robot:
                 # Q.append((x - 1, y + 1))
                 # Q.append((x + 1, y + 1))
             else:
-                pass
-        
+                continue
+        print("found frontiers", found_frontiers)
+        if len(found_frontiers) > 0:
+            return found_frontiers
+            #return random.choice(found_frontiers)
         return None
 
     def get_frontier_path(self):
@@ -134,7 +150,7 @@ class Robot:
             # self.pos = sorted_path[-1]
             # return self.frontier
             try:
-                cell = sorted_path[-10]
+                cell = sorted_path[-1]
             except:
                 cell = sorted_path[-1]
             return cell
