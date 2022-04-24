@@ -6,12 +6,12 @@ from constants import c
 
 
 class Robot: 
-    def __init__(self, x, y, grid):
+    def __init__(self, x, y, grid, global_seen):
         self.pos = (x, y)
         self.radius = 4
         self.side = 2 * self.radius + 1
         self.grid = grid
-        self.seen = dict()
+        self.seen = global_seen
         self.path = set()
         self.prev_path = set()
         self.frontier = None
@@ -19,6 +19,8 @@ class Robot:
     def get_frontier(self):
         Q = [self.pos]
         V = set()
+
+        prev = None
 
         while len(Q) != 0:
             n = Q.pop(0)
@@ -45,12 +47,16 @@ class Robot:
                 Q.append((x, y - 1))
                 Q.append((x, y + 1))
 
-                # Q.append((x - 1, y - 1))
-                # Q.append((x + 1, y - 1))
-                # Q.append((x - 1, y + 1))
-                # Q.append((x + 1, y + 1))
+                Q.append((x - 1, y - 1))
+                Q.append((x + 1, y - 1))
+                Q.append((x - 1, y + 1))
+                Q.append((x + 1, y + 1))
+
+                prev = n
             else:
-                pass
+                if n not in self.seen:
+                    self.seen[n] = c.WALL
+                    return prev
 
         return None
 
@@ -94,7 +100,7 @@ class Robot:
         if self.frontier:
             #self.pos = self.frontier # teleport robot
             sorted_path = self.sort_path(self.path, self.pos)
-            self.pos = sorted_path[1]
+            self.pos = sorted_path[-1]
             return self.frontier
         else:
             print("Map finished")
