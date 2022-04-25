@@ -92,15 +92,17 @@ class Robot:
         found_unknown = False
         found_obstacle = False
         col, row = p
+        try: 
+            found_obstacle = self.grid[row][col] == c.WALL
+        except:
+            pass
         for i in range(3):
             for j in range(3):
                 try:
                     if self.grid[row-1 + i][col-1+j] == c.FREE:
                         found_free = True
-                    if (col-1+j, row-1 + i) in self.seen:
+                    if not (col-1+j, row-1 + i) in self.seen:
                         found_unknown = True
-                    if self.grid[row-1 + i][col-1+j] == c.WALL:
-                        found_obstacle = True
                 except:
                     continue
         return found_free and found_unknown and not found_obstacle
@@ -116,6 +118,8 @@ class Robot:
                     if row - 1+ i < 0 or col -1 + j < 0:
                         continue
                     if self.grid[row-1+i][col -1 +j] != c.FREE:
+                        continue
+                    if (col -1 + j, row - 1 +i) not in self.seen:
                         continue
                     self.grid[row-1+i][col-1+j] # means is in grid
                     neighbors.append((col-1+j, row-1+i))
@@ -134,6 +138,7 @@ class Robot:
         grid_size = visited.shape[0] * visited.shape[1]
         while len(Q_map) > 0:
             p = Q_map.pop(0)
+            assert(self.grid[p[1]][p[0]] == c.FREE and p in self.seen)
             # print("{}/{}".format(num_iter, grid_size))
             # if num_iter % 5000 == 0:
             #     print(len(np.where(visited > 0.5, visited, visited)))
@@ -160,7 +165,7 @@ class Robot:
                     neighbors = self.get_neighbors(q)
                     for n in neighbors:
                         ncol, nrow = n
-                        if self.is_frontier(n) and visited[nrow][ncol] < 0.5:
+                        if self.is_frontier(n) and visited[nrow][ncol] < 0.5 and n in self.seen:
                             Q_frontier.append(n)
                 # finished inner bfs
                 if len(new_frontier) > 0:
@@ -169,7 +174,7 @@ class Robot:
 
             for n in self.get_neighbors(p):
                 ncol, nrow = n
-                if visited[nrow][ncol] < 0.5:
+                if visited[nrow][ncol] < 0.5 and n in self.seen:
                     Q_map.append(n)
 
         # print(all_frontiers)
@@ -192,7 +197,7 @@ class Robot:
             print("closest to centroid: ", frontier[0])
             return frontier[0]
 
-        all_frontiers = sorted(all_frontiers, key=lambda f: len(f), reverse=True)
+        # all_frontiers = sorted(all_frontiers, key=lambda f: len(f), reverse=True)
         return list(map(get_point, all_frontiers))
 
     def get_frontier(self):
@@ -204,7 +209,12 @@ class Robot:
             self.frontier = self.greedy_frontier()
             self.path = self.create_path(self.frontier)
         elif self.algo is c.WAYFRONT:
-            self.frontier = self.wayfront_frontier()[0]
+            frontiers = self.wayfront_frontier()
+            frontiers = sorted(frontiers, key=lambda x: self.distance(x, self.pos))
+            if len(frontiers) > 0:
+                self.frontier = frontiers[0]
+            else:
+                self.frontier = None
             self.path = self.create_path(self.frontier)
 
         return self.frontier
