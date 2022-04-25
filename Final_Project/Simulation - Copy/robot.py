@@ -17,31 +17,6 @@ class Robot:
         self.prev_path = set()
         self.frontier = None
         self.algo = frontier_algo
-        
-    def optimal_frontier(self):
-        Qm = [self.pos]
-        Vm = set()
-
-        map_open_list = {self.pos}
-
-        while len(Qm) != 0:
-            p = Qm.pop(0)
-
-            if p in map_open_list:
-                continue
-
-            # if p is a frontier (in seen and borders unknown)
-            if True:
-                Qf = {p}
-                new_f = None
-                Vf = set()
-
-                frontier_open_list = {p}
-
-                while len(Qf) != 0:
-                    q = Qf.pop(0)
-                    break
-                    # if q in map_open_list or q in frontier
 
     def greedy_frontier(self):
         Q = [(self.pos, None)]
@@ -66,12 +41,6 @@ class Robot:
 
                 if n not in self.seen:
                     return n
-
-                # for _ in range(8):
-                #     deltaX = random.choice([-1, 0, 1])
-                #     deltaY = random.choice([-1, 0, 1])
-
-                #     Q.append(((x + deltaX, y + deltaY), n))
 
                 Q.append(((x - 1, y), n))
                 Q.append(((x + 1, y), n))
@@ -105,12 +74,11 @@ class Robot:
             total_y = y + delta_y
 
             try:
-                _ = self.grid[total_y][total_x]
-                break
+                if self.grid[total_y][total_x] != c.WALL:
+                    break
             except:
                 continue
 
-        
         self.update_seen(total_x, total_y)  
 
         if len(self.seen) == self.grid.size:
