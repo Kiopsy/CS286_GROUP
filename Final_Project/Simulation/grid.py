@@ -56,8 +56,7 @@ class Grid:
             if frontier == None:
                 frontier = f
                 
-    
-        self.print_grid()
+            self.print_grid()
         return frontier
         
     # function to read initial grid from the layout files
