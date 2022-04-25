@@ -7,11 +7,11 @@ from graphics import GraphicsWindow
 # Variables to set up environment:
 
 # Choosing which from: random walk, greedy, or wayfront_detection
-frontier_algo = c.WAYFRONT
+frontier_algo = c.GREEDY
 # Show graphics: 1 or 0
 show_graphics = 1
 # layout filename
-filename = 'Layouts/layout1_int.txt'
+filename = 'Layouts/layout4_int.txt'
 
 def main():
     # instantiating the environment & running simulations

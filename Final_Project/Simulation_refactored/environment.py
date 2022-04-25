@@ -108,9 +108,15 @@ class Env:
             # print(g.dynamic_grid) 
             if self.show_graphics: 
                 graphics = GraphicsWindow(self.dynamic_grid)
-                graphics.show_env(timestep)
+                algo = ''
+                if self.frontier_algo == c.WAYFRONT:
+                    algo = 'WFD Algorithm'
+                elif self.frontier_algo == c.GREEDY:
+                    algo = 'Greedy Algorithm'
+                else:
+                    algo = 'Random Walk Algorithm'
+                graphics.show_env(timestep, algo)
+                timestep += 1
 
             if frontier == None:
                 break
-
-        timestep += 1

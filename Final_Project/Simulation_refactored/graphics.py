@@ -41,7 +41,7 @@ class GraphicsWindow:
 
         self.env = env
         
-    def show_env(self, timestep): 
+    def show_env(self, timestep, algo): 
         self.convert()
         env = self.env
 
@@ -57,7 +57,7 @@ class GraphicsWindow:
         # Use patches as handles for legend
         plt.legend(handles=color_patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-        plt.title('Robot Map\nTimestep = ' + str(timestep))
+        plt.title('Robot Map\n' + algo + ', Time Step = ' + str(timestep))
         #plt.show()
         plt.savefig(os.getcwd() + '/Frames/Frame_' + str(timestep) + '.png', bbox_inches='tight')
 
