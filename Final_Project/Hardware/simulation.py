@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 def main():
 
-    grid = np.genfromtxt('map_reader_python\map.csv', delimiter=',')  
+    grid = np.genfromtxt('map_reader_python/map.csv', delimiter=',')  
 
     grid = grid[:,1:]
     grid = np.delete(grid, (0), axis = 0)

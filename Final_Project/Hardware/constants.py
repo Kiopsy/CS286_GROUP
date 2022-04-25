@@ -9,3 +9,6 @@ class c:
     FRONTIER_CELL = 5
     UNEXPLORED = -1
 
+    OPEN = 13413134
+    CLOSED =4234213
+    NONE = 4342

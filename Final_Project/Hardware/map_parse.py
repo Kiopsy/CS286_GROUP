@@ -1,8 +1,10 @@
 import rospy
+
 import numpy as np
 import pandas as pd
 import tf
 
+import random
 import sys
 import copy
 import math
@@ -18,7 +20,7 @@ import matplotlib.pyplot as plt
 from tf.transformations import quaternion_from_euler
 
 from move_base_msgs.msg import MoveBaseAction , MoveBaseGoal
-
+from nav_msgs.srv import *
 
 counter = 0
 
@@ -116,7 +118,7 @@ class RobotDriver:
         
         # initialize everything required for moving the robot to a goal
         self.client = actionlib.SimpleActionClient("/"+ str(self.robot_name) + "/move_base", MoveBaseAction)
-        self.timeout = 15.0 # in seconds
+        self.timeout = 20.0 # in seconds
         
         self.goal = MoveBaseGoal()
         self.goal.target_pose.header.frame_id = str(self.robot_name) + "/map"
@@ -125,11 +127,19 @@ class RobotDriver:
         print("Waiting for action lib server: /" + str(self.robot_name) + "/move_base")
         self.client.wait_for_server()
 
-        self.map = self.cost_map = self.merged_map = None
+        self.map = self.costmap = self.merged_map = None
         
         self.costmap_sub = rospy.Subscriber('/' + str(robot_name) + '/move_base/global_costmap/costmap', OccupancyGrid, self.parse_costmap)
         self.map_sub = rospy.Subscriber('/' + str(robot_name) + '/rtabmap/grid_map', OccupancyGrid, self.parse_map)
         self.pos_sub = rospy.Subscriber('/' + str(robot_name) + '/mobile_base/odom', Odometry, self.parse_odom)
+
+        # rospy.wait_for_service(str(self.robot_name) + '/move_base/make_plan')
+        # self.make_plan_serv = rospy.ServiceProxy(str(self.robot_name) + '/move_base/make_plan', GetPlan)
+
+        self.tolerance = 0.1
+
+        rospy.wait_for_service(str(self.robot_name) + '/rtabmap/get_plan')
+        self.make_plan_serv = rospy.ServiceProxy(str(self.robot_name) + '/rtabmap/get_plan', GetPlan)
 
         self.pos = None # tuple (x,y) in real coordinates
     
@@ -163,17 +173,82 @@ class RobotDriver:
         self.goal.target_pose.pose.orientation.w = q[3]
         
         rospy.loginfo("Attempting to move to the goal")
-        print("Goal: ", self.goal)
+        # print("Goal: ", self.goal)
 
         self.client.send_goal(self.goal)
         rospy.sleep(1.0)
-        # wait = self.client.wait_for_result(rospy.Duration(self.timeout))
+        wait = self.client.wait_for_result(rospy.Duration(self.timeout))
         
-        # if not wait:
-        #     print("didnt finish before timeout")
-        # else:
-        #     print("finished goal")
+        if not wait:
+            print("didnt finish before timeout")
+            return False
+        else:
+            print("finished goal")
+            return True
 
+    def goal_is_reachable(self, goal):
+        request = GetPlanRequest()
+        request.start.header.stamp = rospy.Time.now()
+        request.start.header.frame_id = str(self.robot_name) + '/map'
+        
+        rx, ry = self.get_pos()
+        request.start.pose.position.x = ry
+        request.start.pose.position.y = -rx
+
+        request.goal.header.stamp = rospy.Time.now()
+        request.goal.header.frame_id = str(self.robot_name) + '/map'
+        
+        gx, gy = goal
+        request.goal.pose.position.x = gy
+        request.goal.pose.position.y = -gx
+
+        request.tolerance = self.tolerance # meters in x/y
+        rospy.logdebug("%s sending request: %s", self, request)
+        while True:
+            try:
+                response = self.make_plan_serv(request)
+                rospy.logdebug("%s received response: %s", self.robot_name, response)
+                response.plan.header.frame_id = str(self.robot_name) + '/map'
+                return len(response.plan.poses) > 0
+            except rospy.ServiceException as e:
+                rospy.logerr(e)
+                rospy.sleep(1)
+                if rospy.is_shutdown():
+                    sys.exit(1)
+
+    # return the i'th position in the path, if path shorter than i, returns last
+    # if path does not exist, return None
+    def get_point_on_path(self, goal, i):
+        request = GetPlanRequest()
+        request.start.header.stamp = rospy.Time.now()
+        request.start.header.frame_id = str(self.robot_name) + '/map'
+        
+        rx, ry = self.get_pos()
+        request.start.pose.position.x = ry
+        request.start.pose.position.y = -rx
+
+        request.goal.header.stamp = rospy.Time.now()
+        request.goal.header.frame_id = str(self.robot_name) + '/map'
+        
+        gx, gy = goal
+        request.goal.pose.position.x = gy
+        request.goal.pose.position.y = -gx
+
+        request.tolerance = self.tolerance # meters in x/y
+        rospy.logdebug("%s sending request: %s", self, request)
+        try:
+            response = self.make_plan_serv(request)
+            rospy.logdebug("%s received response: %s", self.robot_name, response)
+            response.plan.header.frame_id = str(self.robot_name) + '/map'
+            if len(response.plan.poses) > 0:
+                pose = response.plan.poses[min(i, len(response.plan.poses)-1)].pose
+                x, y = -pose.position.y, pose.position.x
+                return (x,y)
+            else:
+                return None
+        except rospy.ServiceException as e:
+            rospy.logerr(e)
+            return None
 
     # use this to get the map, because it waits until the map is initialized
     def get_map(self):
@@ -199,6 +274,7 @@ class RobotDriver:
                 break
         return self.costmap
 
+    # use this to get the merged map
     def get_mergedmap(self):
         self.get_map()
         self.get_costmap()
@@ -214,7 +290,6 @@ class RobotDriver:
         self.merged_map = ROSMap.merge(self.map, self.costmap)
         return self.merged_map
 
-    
     # use this to get the pos, because it waits until the pos is initialized
     def get_pos(self):
         num_sleep = 0
@@ -227,13 +302,14 @@ class RobotDriver:
                 break
         return self.pos
 
-
 def main():
     rospy.init_node("map_parser")
 
     ros_robot = RobotDriver("locobot1")
 
     iter = 0
+    num_wanders = 0
+
     while True:
         robot_pos = ros_robot.get_pos()
         print("robot_pos", robot_pos)
@@ -252,100 +328,74 @@ def main():
 
         g.define_grid(m.grid, [(col, row)])
 
-        frontiers = g.get_frontier_pos(g.robots[0])
+        frontiers = g.get_frontier(g.robots[0])
+        def get_centroid(frontier):
+            n = float(len(frontier))
+            x_acc, y_acc = 0.0, 0.0
+            for p in frontier:
+                x_acc += float(p[0])
+                y_acc += float(p[1])
+            return (int(round(x_acc/n)), int(round(y_acc/n)))
+        frontiers = sorted(frontiers, key= lambda f: len(f), reverse = True)
+        centroids = map(get_centroid, frontiers)
+        centroid_swap = map(lambda (row, col): (col, row), centroids)
+        centroid_real = map(m.grid_to_real, centroid_swap)
+        print(centroid_real)
+        print("num wanders: {}".format(num_wanders))
+
+        if num_wanders > 2:
+            print("safe wander for 3 iterations")
+            break
         
-        if frontier is None:
-            print("no frontier")
-            m.plot(robot_pos=robot_pos, timestep=iter)
-        else:
-            idx = 0
-            # See if there is any way to determine this
-            while (frontier is not accessible):
-                fcol, frow = frontier[i]
+        if len(frontiers) == 0:
+            print("no frontiers")
+            while True:
+                i = random.choice(range(16))
+                angle = i * math.pi/8
+                step_size = 0.3 # in meters
+                tx, ty = step_size * math.cos(angle) + robot_pos[0], step_size * math.sin(angle) + robot_pos[1]
+                if ros_robot.goal_is_reachable((tx, ty)):
+                    print("safe wandering to goal [{}]: {}".format(num_wanders, (tx, ty)))
+                    tangle = angle - math.pi/2
+                    ros_robot.send_goal((tx, ty), tangle)
+                    break
+            num_wanders += 1
+            continue
+        
+        # idx = 0
+        # max_len = 0
+        # for (i, f) in enumerate(frontiers):
+        #     if len(f) > max_len:
+        #         idx = i
+        #         max_len = len(f)
+        for f in centroids:
+            fcol, frow = f
+            # print("frontier:", m.grid_to_real((frow, fcol)))
+            if not ros_robot.goal_is_reachable(m.grid_to_real((frow, fcol))):
+                print("frontier not reachable")
+                continue
+                    
+            # we know point is reachable at this point
+            point = ros_robot.get_point_on_path(m.grid_to_real((frow, fcol)), 15)
+            if point != None:
+                x, y = point
 
-            print("frontier:", m.grid_to_real((frow, fcol)))
-            frontier_real = m.grid_to_real((frow, fcol))
-
-            angle = math.atan2(frontier_real[1]-robot_pos[1], frontier_real[0]-robot_pos[0])
-            angle -= math.pi/2.0
-            
-            m.plot(robot_pos=robot_pos, frontier_pos=m.grid_to_real((frow, fcol)), timestep=iter)
-            ros_robot.send_goal(m.grid_to_real((frow, fcol)), angle)
-            
-
-
+                angle = math.atan2(y-robot_pos[1], x-robot_pos[0])
+                angle -= math.pi/2.0
+                print("found frontier")
+                #m.plot(robot_pos=robot_pos, frontier_pos=m.grid_to_real((frow, fcol)), timestep=iter)
+                if not ros_robot.send_goal((x,y), angle):
+                    num_wanders += 1
+                else:
+                    num_wanders = 0
+                    break
+      
         if rospy.is_shutdown():
             sys.exit(0)
         iter += 1
-    
 
-
-
-    rospy.spin()
-
-    # mp = PhysicalMap(["locobot3"])
-    # while mp.map_origin is None:
-    #     try:
-    #         mp.find_frontiers()
-    #     except ValueError as e:
-    #         print(e)
-        
-    # #mp.plot()
-    # # While there is some frontier left to explore
-    # print("FRONTIERS INTI", mp.frontiers)
-    # while any(not f is None for f in mp.frontiers):
-    #     print("FRONTIERS", mp.frontiers)
-    #     for i, move_action in enumerate(mp.move_actions):
-    #         '''
-    #         while mp.map2d is None or mp.cost_map is None or mp.merged_map is None:
-    #             try:
-    #                 # send robot position (to make robot stay in place)
-    #                 move_action.client.sleep(0.5)
-    #             except:
-    #                 print("coulnd't send goal 1")
-    #         '''
-
-    #         if not mp.frontiers[i] is None:
-    #             try:
-    #                 print(self.goal)
-    #                 move_action.client.send_goal(move_action.goal)
-    #                 wait = move_action.client.wait_for_result(rospy.Duration(self.timeout))
-    #             except:
-    #                 print("coulnd't send goal 2")
-    #     mp = PhysicalMap(["locobot3"])
-    #     mp.find_frontiers()
-
-
-    # '''
-    # maps = [PhysicalMap("locobot3")]
-    # #global_map_sub = TODO
-    # # Will need to add a map_sub and cost_map_sub arg (for global map) to PhysicalMap object
-    # maps = [PhysicalMap("locobot3", global_map_sub, global_cost_map_sub), PhysicalMap("locobot4", global_map_sub, global_cost_map_sub)]
-    # for map in maps:
-    #     client = map.m.client
-    #     while map.map2d is None or map.cost_map is None or map.merged_map is None:
-    #         try:
-    #             # send robot position (to make robot stay in place)
-    #             client.sleep()
-    #         except:
-    #             print("coulnd't send goal"
-
-    #     if not gx is None:
-    #         try:
-    #             self.m.send_goal((gx,gy), 0)
-    #         except:
-    #             print("coulnd't send goal")
-    
-    # '''
-
-    # #TODO (04/22)
-    # # Clean up error flow/logic, especially when origin isn't found/robot pos are unknown. Do we want to return empty list, [None, ...], or something else?
-    # # Fix logic for initial
-    # # Test with two robots, figure out exact topics
-
-
-    # rospy.spin()
-
+    print("Map Finished")   
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()
