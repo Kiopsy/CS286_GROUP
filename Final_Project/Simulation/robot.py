@@ -2,8 +2,7 @@ import math
 from bresenham import bresenham
 from astar import astar
 from constants import c
-
-
+import random
 
 class Robot: 
     def __init__(self, x, y, grid, global_seen):
@@ -17,13 +16,15 @@ class Robot:
         self.frontier = None
         
     def get_frontier(self):
-        Q = [self.pos]
+        Q = [(self.pos, None)]
         V = set()
 
-        prev = None
+        
 
         while len(Q) != 0:
             n = Q.pop(0)
+
+            n, prev = n
 
             if n in V: continue
             else: V.add(n)
@@ -42,20 +43,25 @@ class Robot:
 
                 # NOTE: May need to handle case where edges are not walls
 
-                Q.append((x - 1, y))
-                Q.append((x + 1, y))
-                Q.append((x, y - 1))
-                Q.append((x, y + 1))
+                for _ in range(8):
+                    deltaX = random.choice([-1, 0, 1])
+                    deltaY = random.choice([-1, 0, 1])
 
-                Q.append((x - 1, y - 1))
-                Q.append((x + 1, y - 1))
-                Q.append((x - 1, y + 1))
-                Q.append((x + 1, y + 1))
+                    Q.append(((x + deltaX, y + deltaY), n))
 
-                prev = n
+                # Q.append(((x - 1, y), n))
+                # Q.append(((x + 1, y), n))
+                # Q.append(((x, y - 1), n))
+                # Q.append(((x, y + 1), n))
+
+                # Q.append(((x - 1, y - 1), n))
+                # Q.append(((x + 1, y - 1), n))
+                # Q.append(((x - 1, y + 1), n))
+                # Q.append(((x + 1, y + 1), n))
+
             else:
                 if n not in self.seen:
-                    self.seen[n] = c.WALL
+                    # self.seen[n] = c.WALL
                     return prev
 
         return None
@@ -100,7 +106,7 @@ class Robot:
         if self.frontier:
             #self.pos = self.frontier # teleport robot
             sorted_path = self.sort_path(self.path, self.pos)
-            self.pos = sorted_path[-1]
+            self.pos = sorted_path[1]
             return self.frontier
         else:
             print("Map finished")

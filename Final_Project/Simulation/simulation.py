@@ -6,12 +6,12 @@ from graphics import GraphicsWindow
 def main():
     
     g = Grid()
-    g.read_Grid('Layouts/layout1_int.txt')
+    g.read_Grid('Layouts/layout4_int.txt')
     # g.print_grid()
     timestep = 0
     while True:
         frontier = g.update_grid()
-        print(g.dynamic_grid)
+        # print(g.dynamic_grid)
         graphics = GraphicsWindow(g.dynamic_grid)
         graphics.show_env(timestep)
 

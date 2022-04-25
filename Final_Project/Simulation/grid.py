@@ -34,22 +34,23 @@ class Grid:
                     elif pt == rob.frontier:
                         self.viz_grid[y][x] = "F"
                         self.dynamic_grid[y][x] = c.FREE
-                    elif pt in rob.path:
+                    elif pt in rob.path and self.dynamic_grid[y][x] != c.ROBOT:
                         self.viz_grid[y][x] = "."
                         self.dynamic_grid[y][x] = c.NEXT_PATH
                     elif pt in rob.prev_path:
                         self.viz_grid[y][x] = "*"
                         self.dynamic_grid[y][x] = c.PREV_PATH
-                    elif pt in rob.seen and i == 0:
+                    elif pt in rob.seen:
                         if rob.seen[pt] == c.FREE:
-                            self.viz_grid[y][x] = " "
-                            self.dynamic_grid[y][x] = c.FREE
+                            if self.viz_grid[y][x] == "-" or i == 0:
+                                self.viz_grid[y][x] = " "
+                                self.dynamic_grid[y][x] = c.FREE
                         elif rob.seen[pt] == c.WALL:
                             self.viz_grid[y][x] = "W"
                             self.dynamic_grid[y][x] = c.WALL
-                    # elif i == 0:
-                    #     self.viz_grid[y][x] = "-"
-                    #     self.dynamic_grid[y][x] = c.UNEXPLORED
+                    elif i == 0:
+                        self.viz_grid[y][x] = "-"
+                        self.dynamic_grid[y][x] = c.UNEXPLORED
 
             f = rob.explore()
             if frontier == None:
@@ -57,7 +58,6 @@ class Grid:
                 
     
         self.print_grid()
-        # time.sleep(0.75)
         return frontier
         
     # function to read initial grid from the layout files
