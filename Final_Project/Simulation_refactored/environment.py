@@ -116,7 +116,8 @@ class Env:
                 else:
                     algo = 'Random Walk Algorithm'
                 graphics.show_env(timestep, algo)
-                timestep += 1
+            timestep += 1
 
             if frontier == None:
                 break
+        return timestep
