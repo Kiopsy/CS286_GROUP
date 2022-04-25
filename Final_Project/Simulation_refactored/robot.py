@@ -1,6 +1,6 @@
 import math
 from bresenham import bresenham
-from numpy import size
+from numpy import size, sort
 from astar import astar
 from constants import c
 import random
@@ -204,9 +204,8 @@ class Robot:
             self.frontier = self.greedy_frontier()
             self.path = self.create_path(self.frontier)
         elif self.algo is c.WAYFRONT:
-            self.fronitier = self.wayfront_frontier()[0]
+            self.frontier = self.wayfront_frontier()[0]
             self.path = self.create_path(self.frontier)
-
 
         return self.frontier
 
@@ -245,7 +244,11 @@ class Robot:
         if self.frontier:
             # self.pos = self.frontier # teleport robot
             sorted_path = self.sort_path(self.path, self.pos)
-            self.pos = sorted_path[1]
+            try:
+                self.pos = sorted_path[1]
+            except:
+                self.pos = self.frontier
+            
             return self.frontier
         else:
             print("Map finished")
