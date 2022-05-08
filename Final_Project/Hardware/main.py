@@ -364,7 +364,7 @@ def main():
                 fcol, frow = fc
                 # Initialize index of point on path to frontier cell that will be checked
                 # Use large value because the robot should get close to frontier cell
-                idx_of_path_pt = 500
+                idx_of_path_pt = 300
                 point = None
                 # Find the farthest reachable point in the path
                 while point is None:
