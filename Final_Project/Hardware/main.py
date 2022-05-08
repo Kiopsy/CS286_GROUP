@@ -37,11 +37,17 @@ Our implementation was designed for a LoCoBot.
 # ROSMap
 # This class manages all the coordinate system
 # conversions and map processing
+# 
+# In our code, we use real coordinates as in +x denotes right and +y denotes front (in meters)
+# While working with grids, we use row, col notation 
+# This is important as in ROS, +x is front and +y is left (so the coordinate system is rotated)
 class ROSMap:
     def __init__(self, map_msg):
+        # get the map origin, (0,0) in grid, coordinates in real coordinates 
         self.origin = (-map_msg.info.origin.position.y, map_msg.info.origin.position.x)
         self.origin_theta = map_msg.info.origin.orientation.z
 
+        # set the map width and height
         self.w, self.h = map_msg.info.width, map_msg.info.height # the width and height of map in terms of number of cells
         self.resolution = map_msg.info.resolution # the edge size of a cell in meters 
 
@@ -113,7 +119,6 @@ class RobotDriver:
 
         # Define tolerance for navigation stack
         self.tolerance = 0.1
-
 
         self.pos = None # will be tuple (x,y) in real coordinates
     

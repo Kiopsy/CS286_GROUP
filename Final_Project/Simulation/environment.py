@@ -9,7 +9,7 @@ import copy
 import time
 import math
 
-from scipy.optimize import linear_sum_assignment
+#from scipy.optimize import linear_sum_assignment
 
 class Env:
     def __init__(self, filename, frontier_algo, show_graphics):
@@ -35,8 +35,11 @@ class Env:
 
         for i, rob in enumerate(self.robots):
 
-            rob.sense()
-            rob.get_frontier()
+            stationary = (rob.frontier == None) or (rob.pos == rob.frontier)
+
+            if stationary:
+                rob.sense()
+                rob.get_frontier()
 
             for y in range(len(self.grid)):
                 for x in range(len(self.grid[y])):
@@ -68,7 +71,7 @@ class Env:
             f = rob.explore()
             if frontier == None:
                 frontier = f
-                
+                 
             self.print_grid()
         return frontier
     
@@ -200,7 +203,7 @@ class Env:
     def run_simulation(self):
         timestep = 0
         while True:
-            frontier = self.update_grid_task_allocation()
+            frontier = self.update_grid()
             # print(g.dynamic_grid) 
             if self.show_graphics: 
                 graphics = GraphicsWindow(self.dynamic_grid)

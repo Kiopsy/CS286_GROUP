@@ -1,2 +1,5 @@
 ,Algorithm,Map Area (Cells^2),Number of Robots,Time to Completion (Time Steps)
-0,WFD,380,1,66
+0,WFD,380,1,35
+1,WFD,380,2,23
+2,Greedy,380,1,31
+3,Greedy,380,2,17

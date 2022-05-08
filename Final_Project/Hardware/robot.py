@@ -55,7 +55,7 @@ class VirtualRobot:
         return new_points >= total * 0.9
 
     # Determine whether a point is a frontier
-    # using definition in paper
+    # using definition in paper (if a point is a neighbor to an explored free point and unexplored point)
     def is_frontier(self, p):
         found_free = False
         found_unknown = False
@@ -74,7 +74,7 @@ class VirtualRobot:
                     continue
         return found_free and found_unknown and not found_obstacle
 
-    # Get neighbors of a point
+    # Get free neighbors of a point
     def get_neighbors(self, p):
         col, row = p
         neighbors = []
@@ -95,30 +95,35 @@ class VirtualRobot:
     # Greedy frontier detection algorithm
     # Return list (max size = MAX_FRONTIER_LEN) of 
     # nearest unexplored points that are sufficiently 
-    # big and at least MIN_FRONTIER_DISTANCE apart
+    # large and at least MIN_FRONTIER_DISTANCE apart
     def get_frontier_greedy(self):
         Q = [self.pos]
         V = set()
 
         found_frontiers = []
 
-
+        # Execute BFS
         while len(Q) != 0 and len(found_frontiers) < MAX_FRONTIER_LEN:
             
             n = Q.pop(0)
             
+            # If we already visited this loc, skip
             if n in V: continue
             else: V.add(n)
 
             x, y = n
 
             try:
+                # Make sure the point is in bounds
                 space = self.grid[y][x] 
             except:
                 continue
             
             if space <= c.FREE:
 
+                # If n is not in self.seen, it is unknown
+                # If it is in a sufficiently large unknown space, and far enough from
+                # already found frontiers, add it to the frontier list
                 if n not in self.seen and self.is_big(n):
                     min_dist = 1e9
                     
@@ -129,6 +134,7 @@ class VirtualRobot:
                     if min_dist > MIN_FRONTIER_DISTANCE:
                         found_frontiers.append(n)
 
+                # Add neighbors to the end of the queue
                 if x > 0:
                     Q.append((x - 1, y))
                 Q.append((x + 1, y))
@@ -164,6 +170,8 @@ class VirtualRobot:
                 # Mark point as not visited so it will be visited later
                 visited[prow][pcol] = 0.0
 
+                # Once we find a frontier point, run BFS
+                # on all neighboring points to find the whole frontier
                 while len(Q_frontier) > 0:
                     q = Q_frontier.pop(0)
                     qcol, qrow = q

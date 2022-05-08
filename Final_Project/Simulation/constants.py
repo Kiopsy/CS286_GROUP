@@ -12,5 +12,5 @@ class c:
     # frontier algorithm constnats
     RANDOM_WALK = 7
     GREEDY = 8
-    WAYFRONT = 9
+    WAVEFRONT = 9
 

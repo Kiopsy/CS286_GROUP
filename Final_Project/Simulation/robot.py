@@ -17,7 +17,7 @@ class Robot:
         self.prev_path = set()
         self.frontier = None
         self.algo = frontier_algo
-
+ 
     
     # def get_region(self):
     #     region = []
@@ -150,7 +150,7 @@ class Robot:
                     continue
         return neighbors
         
-    def wayfront_frontier(self):
+    def wavefront_frontier(self):
         Q_map = [self.pos]
         self.grid[self.pos[1]][self.pos[0]] = c.FREE
 
@@ -224,8 +224,8 @@ class Robot:
         return list(map(get_point, self.all_frontiers))
 
     def get_all_frontiers(self):
-        assert(self.algo is c.WAYFRONT)    
-        self.wayfront_frontier()
+        assert(self.algo is c.WAVEFRONT)    
+        self.wavefront_frontier()
 
         return self.all_frontiers
 
@@ -237,8 +237,8 @@ class Robot:
         elif self.algo is c.GREEDY:
             self.frontier = self.greedy_frontier()
             self.path = self.create_path(self.frontier)
-        elif self.algo is c.WAYFRONT:
-            frontiers = self.wayfront_frontier()
+        elif self.algo is c.WAVEFRONT:
+            frontiers = self.wavefront_frontier()
             frontiers = sorted(frontiers, key=lambda x: self.distance(x, self.pos))
             if len(frontiers) > 0:
                 self.frontier = frontiers[0]
@@ -256,7 +256,8 @@ class Robot:
     def sort_path(self, points, start):
         # Create new list for sorted path
         sorted_path = [start]
-        points.remove(start)
+        if start in points:
+            points.remove(start)
         # Sort points based on shortest distance between one point and another, appending as needed
         while points:
             nearest_point = min(points, key=lambda x: self.distance(sorted_path[-1], x))
@@ -283,8 +284,8 @@ class Robot:
     def explore(self):
         if self.frontier:
             # self.pos = self.frontier # teleport robot
-            sorted_path = self.sort_path(self.path, self.pos)
             try:
+                sorted_path = self.sort_path(self.path, self.pos)
                 self.pos = sorted_path[1]
             except:
                 self.pos = self.frontier

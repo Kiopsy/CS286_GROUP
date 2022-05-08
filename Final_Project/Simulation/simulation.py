@@ -30,14 +30,14 @@ def main():
     # Create list for data
     all_data = []
     # Run simulation for each algo, on each number of robots <= max_robots, and on each layout number in layout_nums
-    for algo in [c.WAYFRONT]:
+    for algo in [c.WAVEFRONT, c.GREEDY]:
         # Create string version for dataframe
-        algorithm = "WFD" if algo == c.WAYFRONT else "Greedy"
+        algorithm = "WFD" if algo == c.WAVEFRONT else "Greedy"
         #for filename in filenames:
         layout_nums = [1]
         for layout_num in layout_nums:
             for num_robots in range(1, max_robots + 1):
-                print("Testing " + algorithm + " on layout #" + str(layout_num) + " and " + str(num_robots) + " robots.")
+                print("Testing " + algorithm + " on layout #" + str(layout_num) + " and with " + str(num_robots) + " robots.")
                 filename = 'Layouts/Layout' + str(layout_num) + '/layout' + str(layout_num) + '_' + str(num_robots) + '_int.txt'
                 env = Env(filename, algo, show_graphics)
                 area = env.grid.size
