@@ -18,7 +18,7 @@ from tf.transformations import quaternion_from_euler
 from move_base_msgs.msg import MoveBaseAction , MoveBaseGoal
 from nav_msgs.srv import *
 
-FD_ALGO = "Greedy"
+FD_ALGO = "WFD"
 ROBOT_NAME = "locobot3"
 
 '''
@@ -216,6 +216,7 @@ class RobotDriver:
                         rob_pos_dist = math.sqrt((posey - gy)**2 + (posex - gx)**2)
                         if rob_pos_dist <= 0.05:
                             rob_pos_found = True
+
                     # A point is reachable essentially if goal and robot position are reachable and if the goal is free in the cost map
                     return free_goal and rob_pos_found and goal_found
                 else: 
@@ -257,7 +258,7 @@ class RobotDriver:
             rospy.logdebug("%s received response: %s", self.robot_name, response)
             response.plan.header.frame_id = str(self.robot_name) + '/map'
 
-            # Return the ith (or last) position in the path, after converting to real coordinates
+            # Return the ith (or last) position in the path after converting it to real coordinate system
             if len(response.plan.poses) > 0:
                 pose = response.plan.poses[min(i, len(response.plan.poses)-1)].pose
                 x, y = -pose.position.y, pose.position.x
@@ -333,6 +334,7 @@ def main():
     # Define the number of times the robot safe wanders
     num_wanders = 0
 
+    # Begin infinite loop because breaks will need to occur at specific places
     while True:
         print("")
         
@@ -416,11 +418,11 @@ def main():
                     num_wanders = 3
                     break
                 
-                # Define random walk point
-                angle = rand * math.pi/4.0
+                # Define random walk pose vals
+                angle = rand * math.pi / 4.0
                 step_size = 0.15 # in meters
                 tx, ty = step_size * math.cos(angle) + robot_pos[0], step_size * math.sin(angle) + robot_pos[1]
-                tangle = angle - math.pi/2.0
+                tangle = angle - math.pi / 2.0
 
                 # Check if random walk point is reachable and successfully processed by ROS
                 # print("Checking random walk point: " + "(" + str(tx) + ", " + str(ty) + ")")

@@ -52,7 +52,7 @@ class VirtualRobot:
                     new_points += 1.0
                 total += 1.0
         
-        return new_points >= total*0.9
+        return new_points >= total * 0.9
 
     # Determine whether a point is a frontier
     # using definition in paper
@@ -64,11 +64,11 @@ class VirtualRobot:
         for i in range(3):
             for j in range(3):
                 try:
-                    if self.grid[row-1 + i][col-1+j] == c.FREE:
+                    if self.grid[row - 1 + i][col - 1 + j] == c.FREE:
                         found_free = True
-                    if self.grid[row-1 + i][col-1+j] == c.UNEXPLORED:
+                    if self.grid[row - 1 + i][col - 1 + j] == c.UNEXPLORED:
                         found_unknown = True
-                    if self.grid[row-1 + i][col-1+j] == c.WALL:
+                    if self.grid[row - 1 + i][col - 1 + j] == c.WALL:
                         found_obstacle = True
                 except:
                     continue
@@ -83,11 +83,11 @@ class VirtualRobot:
                 if i == 1 and j == 1:
                     continue
                 try:
-                    if row - 1+ i < 0 or col -1 + j < 0:
+                    if row - 1 + i < 0 or col - 1 + j < 0:
                         continue
-                    if self.grid[row-1+i][col -1 +j] != c.FREE:
+                    if self.grid[row - 1 + i][col - 1 + j] != c.FREE:
                         continue
-                    neighbors.append((col-1+j, row-1+i))
+                    neighbors.append((col - 1 + j, row - 1 + i))
                 except:
                     continue
         return neighbors
@@ -205,7 +205,7 @@ class VirtualRobot:
         def get_point(frontier):
             c = get_centroid(frontier)
             frontier = sorted(frontier, key=lambda x: self.distance(x, c))
-            return frontier[0] # closest point to the centroid
+            return frontier[0] # return closest point to the centroid
 
         # Sort all frontiers from biggest to smallest
         all_frontiers = sorted(all_frontiers, key= lambda f: len(f), reverse = True)
