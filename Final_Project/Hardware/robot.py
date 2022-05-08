@@ -1,29 +1,36 @@
 import math
+import random
+import sys
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 from bresenham import bresenham
 from astar import astar
 from constants import c
-import random
-import numpy as np
-import sys
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
+FRONTIER_SIZE = 10 # Min side length // 0.9 of frontier in greedy algo
+MIN_FRONTIER_DISTANCE = 5 # Minimum distance between two frontiers in greedy algo
+MAX_FRONTIER_LEN = 20 # Maximum number of frontiers to be returned by greedy algo
 
-SENSING_RADIUS = 4
-FRONTIER_SIZE = 10
-MIN_FRONTIER_DISTANCE = 5
-MAX_FRONTIER_LEN = 20
-class Robot: 
-    def __init__(self, x, y, grid, seen):
+# VirtualRobot
+# This class manages all the frontier detection
+# and virtual robot interactions with its map
+class VirtualRobot: 
+    def __init__(self, x, y, grid):
         self.pos = (x, y)
-        self.radius = SENSING_RADIUS
-        self.side = 2 * self.radius + 1
         self.grid = grid
-        self.seen = seen
-        self.path = set()
-        self.prev_path = set()
-        self.frontier = None
+        self.seen = dict() # seen positions on map
+
+        # Initialize seen using known/explored values
+        known = np.where(grid != c.UNEXPLORED)
+        rows, cols = known
+        known = list(zip(cols, rows))
+        for col, row in known:     
+            self.seen[(col,row)] = grid[row][col]
     
+    # Determine whether a frontier is big enough
+    # (whether 90% of the FRONTIER_SIZE x FRONTIER_SIZE square
+    # of which it is the center is also unexplored)
     def is_big(self, pt):
 
         x, y = pt
@@ -47,6 +54,8 @@ class Robot:
         
         return new_points >= total*0.9
 
+    # Determine whether a point is a frontier
+    # using definition in paper
     def is_frontier(self, p):
         found_free = False
         found_unknown = False
@@ -65,6 +74,7 @@ class Robot:
                     continue
         return found_free and found_unknown and not found_obstacle
 
+    # Get neighbors of a point
     def get_neighbors(self, p):
         col, row = p
         neighbors = []
@@ -81,29 +91,77 @@ class Robot:
                 except:
                     continue
         return neighbors
-    def get_frontier(self):
+
+    # Greedy frontier detection algorithm
+    # Return list (max size = MAX_FRONTIER_LEN) of 
+    # nearest unexplored points that are sufficiently 
+    # big and at least MIN_FRONTIER_DISTANCE apart
+    def get_frontier_greedy(self):
+        Q = [self.pos]
+        V = set()
+
+        found_frontiers = []
+
+
+        while len(Q) != 0 and len(found_frontiers) < MAX_FRONTIER_LEN:
+            
+            n = Q.pop(0)
+            
+            if n in V: continue
+            else: V.add(n)
+
+            x, y = n
+
+            try:
+                space = self.grid[y][x] 
+            except:
+                continue
+            
+            if space <= c.FREE:
+
+                if n not in self.seen and self.is_big(n):
+                    min_dist = 1e9
+                    
+                    for f in found_frontiers:
+                        if self.distance(f, n) < min_dist:
+                            min_dist = self.distance(f,n)
+
+                    if min_dist > MIN_FRONTIER_DISTANCE:
+                        found_frontiers.append(n)
+
+                if x > 0:
+                    Q.append((x - 1, y))
+                Q.append((x + 1, y))
+                
+                if y > 0:
+                    Q.append((x, y - 1))
+                Q.append((x, y + 1))
+
+            else:
+                continue
+  
+        return found_frontiers
+
+    # WFD algorithm
+    def get_frontier_WFD(self):
+        # Run outer BFS
         Q_map = [self.pos]
-
         visited = np.zeros_like(np.array(self.grid))
-
-        all_frontiers = []
+        all_frontiers = [] # will contain lists of tuples that comprise frontiers
         num_iter = 0
         grid_size = visited.shape[0] * visited.shape[1]
         while len(Q_map) > 0:
             p = Q_map.pop(0)
-            # print("{}/{}".format(num_iter, grid_size))
-            # if num_iter % 5000 == 0:
-            #     print(len(np.where(visited > 0.5, visited, visited)))
             num_iter += 1
             pcol, prow = p
             if visited[prow][pcol] > 0.5:
                 continue
             visited[prow][pcol] = 1.0
             if self.is_frontier(p):
-                # run inner BFS
+                # Run inner BFS
                 Q_frontier = [p]
                 new_frontier = []
-                # mark not visited so that it actually visits
+                # Mark point as not visited so it will be visited later
                 visited[prow][pcol] = 0.0
 
                 while len(Q_frontier) > 0:
@@ -120,39 +178,20 @@ class Robot:
                         ncol, nrow = n
                         if self.is_frontier(n) and visited[nrow][ncol] < 0.5:
                             Q_frontier.append(n)
-                # finished inner bfs
+                # Append found frontier to list
                 if len(new_frontier) > 0:
-                    # print("frontier: {}".format(new_frontier))
                     all_frontiers.append(new_frontier)
 
             for n in self.get_neighbors(p):
                 ncol, nrow = n
                 if visited[nrow][ncol] < 0.5:
                     Q_map.append(n)
-
-        # print(all_frontiers)
-        # cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red'])
-        # bounds = [-1, 0, 50, 101, 10000]
-        # norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-        
         for f in all_frontiers:
             for p in f:
                 pcol, prow = p
                 self.grid[prow][pcol] = 5000
-
-        # cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red'])
-        # bounds = [-1, 0, 50, 101, 10000]
-        # norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-    
-        # # tell imshow about color map so that only set colors are used
-        # img = plt.imshow(self.grid, interpolation='nearest', cmap = cmap,norm=norm)
-
-        # # make a color bar
-    
-        # plt.colorbar(img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[-5,0,5])
-    
-        # plt.show()
         
+        # Get centroid of frontier, which is defined by a list of tuples
         def get_centroid(frontier):
             n = float(len(frontier))
             x_acc, y_acc = 0.0, 0.0
@@ -160,174 +199,19 @@ class Robot:
                 x_acc += float(p[0])
                 y_acc += float(p[1])
             return (int(round(x_acc/n)), int(round(y_acc/n)))
-            # return (x_acc/n, y_acc/n)
-        def distance(x, y):
-            return math.sqrt((x[0]-y[0])**2 + (x[1]-y[1])**2)
+
+        # Get point nearest to centroid of a given frontier
+        # Necessary for irregularly shaped frontiers
         def get_point(frontier):
             c = get_centroid(frontier)
-            frontier = sorted(frontier, key=lambda x: distance(x, c))
+            frontier = sorted(frontier, key=lambda x: self.distance(x, c))
             return frontier[0] # closest point to the centroid
-        
+
+        # Sort all frontiers from biggest to smallest
+        all_frontiers = sorted(all_frontiers, key= lambda f: len(f), reverse = True)
+        # Reduce list of frontiers to list of their nearest-to-centroid points
         return map(get_point, all_frontiers)
 
-    # def get_frontier(self):
-    #     Q = [self.pos]
-    #     V = set()
-
-    #     found_frontiers = []
-
-
-
-    #     while len(Q) != 0 and len(found_frontiers) < MAX_FRONTIER_LEN:
-            
-    #         n = Q.pop(0)
-            
-    #         if n in V: continue
-    #         else: V.add(n)
-
-    #         x, y = n
-
-    #         try:
-    #             space = self.grid[y][x] 
-    #         except:
-    #             continue
-            
-    #         if space <= c.FREE:
-
-    #             if n not in self.seen and self.is_big(n):
-    #                 min_dist = 1e9
-                    
-    #                 for f in found_frontiers:
-    #                     if self.distance(f, n) < min_dist:
-    #                         min_dist = self.distance(f,n)
-
-    #                 if min_dist > MIN_FRONTIER_DISTANCE:
-    #                     found_frontiers.append(n)
-    #                 # return n
-
-    #             # NOTE: May need to handle case where edges are not walls
-    #             if x > 0:
-    #                 Q.append((x - 1, y))
-    #             Q.append((x + 1, y))
-                
-    #             if y > 0:
-    #                 Q.append((x, y - 1))
-    #             Q.append((x, y + 1))
-
-    #             # Q.append((x - 1, y - 1))
-    #             # Q.append((x + 1, y - 1))
-    #             # Q.append((x - 1, y + 1))
-    #             # Q.append((x + 1, y + 1))
-    #         else:
-    #             continue
-    #     print("found frontiers", found_frontiers)
-    #     if len(found_frontiers) > 0:
-    #         return found_frontiers
-    #         # return random.choice(found_frontiers)
-    #     return None
-
-    def get_frontier_path(self):
-        self.frontier = self.get_frontier()
-        self.prev_path = self.path
-        self.path = self.create_path(self.frontier)
-
-    # Return euclidean distance
+    # Compute Euclidean distance between two points
     def distance(self, point1, point2):
         return math.sqrt(math.pow(point2[0] - point1[0], 2) + math.pow(point2[1] - point1[1], 2))
-
-
-    def sort_path(self, points, start):
-        # Create new list for sorted path
-        sorted_path = [start]
-        points.remove(start)
-        # Sort points based on shortest distance between one point and another, appending as needed
-        while points:
-            nearest_point = min(points, key=lambda x: self.distance(sorted_path[-1], x))
-            sorted_path.append(nearest_point)
-            points.remove(nearest_point)
-        # Return list for sorted path
-        return sorted_path
-
-    def create_path(self, goal):
-        if goal:
-            goal = goal[::-1]
-            start = self.pos[::-1]
-            path = astar(self.grid, start, goal)
-
-            for i, pt in enumerate(path):
-                path[i] = pt[::-1]
-            
-            path = set(path)
-        else:
-            path = set()
-
-        return path
-
-    def explore(self):
-        if self.frontier:
-            #self.pos = self.frontier # teleport robot
-            sorted_path = self.sort_path(self.path, self.pos)
-            # self.pos = sorted_path[-1]
-            # return self.frontier
-            try:
-                cell = sorted_path[-1]
-            except:
-                cell = sorted_path[-1]
-            return cell
-        else:
-            print("Map finished")
-            return None
-    
-    def raycast(self):
-        x, y = self.pos
-
-        points = []
-
-        dist = self.radius
-
-        num_points = self.side * 4 - 4
-
-        base_theta = 2 * math.pi / num_points
-
-        for i in range(num_points):
-            
-            theta = i * base_theta
-
-            dx = round(dist * math.cos(theta))
-            dy = round(dist * math.sin(theta))
-
-            pt = (x + dx, y + dy)
-
-            points.append(pt)
-        
-        return points
-    
-    def bresenham(self, p2):
-        points = []
-
-        x1, y1 = self.pos
-        x2, y2 = p2
-
-        intermediates = list(bresenham(x1, y1, x2, y2))
-        for p in intermediates:
-            x, y = p
-            try:
-                space = self.grid[y][x]
-            except:
-                break
-
-            if space != c.WALL:
-                self.seen[(x,y)] = c.FREE
-            else:
-                self.seen[(x,y)] = c.WALL
-                break
-
-
-            points.append((x, y))
-        return points
-
-    def sense(self):
-        points = self.raycast()
-
-        for point in points:
-            self.bresenham(point)
