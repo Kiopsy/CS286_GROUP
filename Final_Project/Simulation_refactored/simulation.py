@@ -26,7 +26,7 @@ def main():
 
     # instantiating the environment & running simulations
     # Define the max number of robots on which you hope to test
-    max_robots = 4
+    max_robots = 2
     # Create list for data
     all_data = []
     # Run simulation for each algo, on each number of robots <= max_robots, and on each layout number in layout_nums
@@ -34,7 +34,7 @@ def main():
         # Create string version for dataframe
         algorithm = "WFD" if algo == c.WAYFRONT else "Greedy"
         #for filename in filenames:
-        layout_nums = [1, 3, 4]
+        layout_nums = [1]
         for layout_num in layout_nums:
             for num_robots in range(1, max_robots + 1):
                 print("Testing " + algorithm + " on layout #" + str(layout_num) + " and " + str(num_robots) + " robots.")

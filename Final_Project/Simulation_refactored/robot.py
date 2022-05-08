@@ -18,6 +18,29 @@ class Robot:
         self.frontier = None
         self.algo = frontier_algo
 
+    
+    # def get_region(self):
+    #     region = []
+
+    #     Q = [self.pos]
+    #     V = set()
+    #     while len(Q) != 0:
+    #         n = Q.pop(0)
+            
+    #         if n in V: continue
+    #         else: V.add(n)
+
+    #         x, y = n
+
+    #         try:
+    #             space = self.grid[y][x]
+    #         except:
+    #             continue
+                
+            
+
+    #     return region
+
     def greedy_frontier(self):
         Q = [(self.pos, None)]
         V = set()
@@ -133,7 +156,7 @@ class Robot:
 
         visited = np.zeros_like(np.array(self.grid))
 
-        all_frontiers = []
+        self.all_frontiers = []
         num_iter = 0
         grid_size = visited.shape[0] * visited.shape[1]
         while len(Q_map) > 0:
@@ -170,7 +193,7 @@ class Robot:
                 # finished inner bfs
                 if len(new_frontier) > 0:
                     # print("frontier: {}".format(new_frontier))
-                    all_frontiers.append(new_frontier)
+                    self.all_frontiers.append(new_frontier)
 
             for n in self.get_neighbors(p):
                 ncol, nrow = n
@@ -192,13 +215,19 @@ class Robot:
             # return (x_acc/n, y_acc/n)
         def get_point(frontier):
             c = get_centroid(frontier)
-            print("centroid: ", c)
+            # print("centroid: ", c)
             frontier = sorted(frontier, key = lambda x: self.distance(x, c))
-            print("closest to centroid: ", frontier[0])
+            # print("closest to centroid: ", frontier[0])
             return frontier[0]
 
         # all_frontiers = sorted(all_frontiers, key=lambda f: len(f), reverse=True)
-        return list(map(get_point, all_frontiers))
+        return list(map(get_point, self.all_frontiers))
+
+    def get_all_frontiers(self):
+        assert(self.algo is c.WAYFRONT)    
+        self.wayfront_frontier()
+
+        return self.all_frontiers
 
     def get_frontier(self):
         self.prev_path = self.path
@@ -237,6 +266,7 @@ class Robot:
         return sorted_path
 
     def create_path(self, goal):
+        print(goal)
         if goal:
             goal = (goal[1], goal[0])
             start = (self.pos[1], self.pos[0])
