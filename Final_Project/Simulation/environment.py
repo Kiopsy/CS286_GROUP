@@ -33,8 +33,11 @@ class Env:
 
         for i, rob in enumerate(self.robots):
 
-            rob.sense()
-            rob.get_frontier()
+            stationary = True
+
+            if stationary:
+                rob.sense()
+                rob.get_frontier()
 
             for y in range(len(self.grid)):
                 for x in range(len(self.grid[y])):

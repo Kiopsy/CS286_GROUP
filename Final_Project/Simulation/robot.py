@@ -233,6 +233,7 @@ class Robot:
         return ((point2[0] - point1[0])**2 + (point2[1] - point1[1])**2) ** (1 / 2)
 
 
+    # sort the path to frontier by length
     def sort_path(self, points, start):
         # Create new list for sorted path
         sorted_path = [start]
@@ -246,6 +247,7 @@ class Robot:
         # Return list for sorted path
         return sorted_path
 
+    # maka a path to frontier
     def create_path(self, goal):
         print(goal)
         if goal:
@@ -261,6 +263,7 @@ class Robot:
 
         return path
 
+    # move towards frontier
     def explore(self):
         if self.frontier:
             # self.pos = self.frontier # teleport robot
@@ -275,6 +278,7 @@ class Robot:
             print("Map finished")
             return None
     
+    # Get the points of the sensing perimeter
     def raycast(self):
         x, y = self.pos
 
@@ -299,6 +303,8 @@ class Robot:
         
         return points
     
+    # get all points on the way to the sensing perimeter that aren't blocked
+    # by an obstacle and add them to seen
     def bresenham(self, p2):
         points = []
 
@@ -314,12 +320,14 @@ class Robot:
             points.append((x, y))
         return points
 
+    # send rays out in all directions and add them to seen
     def sense(self):
         points = self.raycast()
 
         for point in points:
             self.bresenham(point)
     
+    # add a grid location to the known area
     def update_seen(self, x, y):
         try:
             space = self.grid[y][x]
