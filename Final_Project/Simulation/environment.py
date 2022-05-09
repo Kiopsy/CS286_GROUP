@@ -35,11 +35,8 @@ class Env:
 
         for i, rob in enumerate(self.robots):
 
-            stationary = (rob.frontier == None) or (rob.pos == rob.frontier)
-
-            if stationary:
-                rob.sense()
-                rob.get_frontier()
+            rob.sense()
+            rob.get_frontier()
 
             for y in range(len(self.grid)):
                 for x in range(len(self.grid[y])):
