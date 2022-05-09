@@ -18,29 +18,6 @@ class Robot:
         self.frontier = None
         self.algo = frontier_algo
  
-    
-    # def get_region(self):
-    #     region = []
-
-    #     Q = [self.pos]
-    #     V = set()
-    #     while len(Q) != 0:
-    #         n = Q.pop(0)
-            
-    #         if n in V: continue
-    #         else: V.add(n)
-
-    #         x, y = n
-
-    #         try:
-    #             space = self.grid[y][x]
-    #         except:
-    #             continue
-                
-            
-
-    #     return region
-
     def greedy_frontier(self):
         Q = [(self.pos, None)]
         V = set()
@@ -110,6 +87,11 @@ class Robot:
             print()
             return (total_x, total_y)
 
+# is_frontier
+# arguments: p --> tuple: (x,y) 
+# returns True if p is a frontier point
+# p is a frontier point if it neighbors both FREE spaces and UNKNOWN points
+# but is not an obstacle
     def is_frontier(self, p):
         found_free = False
         found_unknown = False
@@ -130,6 +112,10 @@ class Robot:
                     continue
         return found_free and found_unknown and not found_obstacle
 
+# get_neighbors
+# argument is a point in (col, row) form 
+# returns the neighbors of p that are FREE (not walls or unknown)
+#
     def get_neighbors(self, p):
         col, row = p
         neighbors = []
@@ -149,7 +135,11 @@ class Robot:
                 except:
                     continue
         return neighbors
-        
+
+# wavefront_frontier
+# no arguments
+# find all the frontiers using the WFD algorithm
+# starting the robot position (self.pos)
     def wavefront_frontier(self):
         Q_map = [self.pos]
         self.grid[self.pos[1]][self.pos[0]] = c.FREE
@@ -199,11 +189,6 @@ class Robot:
                 ncol, nrow = n
                 if visited[nrow][ncol] < 0.5 and n in self.seen:
                     Q_map.append(n)
-
-        # print(all_frontiers)
-        # cmap = mpl.colors.ListedColormap(['blue', 'white','black', 'red'])
-        # bounds = [-1, 0, 50, 101, 10000]
-        # norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     
         def get_centroid(frontier):
             n = float(len(frontier))
@@ -212,23 +197,18 @@ class Robot:
                 x_acc += float(p[0])
                 y_acc += float(p[1])
             return (int(round(x_acc/n)), int(round(y_acc/n)))
-            # return (x_acc/n, y_acc/n)
         def get_point(frontier):
+            # sort by the distance to the centroid and return the first element (closest)
             c = get_centroid(frontier)
-            # print("centroid: ", c)
             frontier = sorted(frontier, key = lambda x: self.distance(x, c))
-            # print("closest to centroid: ", frontier[0])
             return frontier[0]
 
-        # all_frontiers = sorted(all_frontiers, key=lambda f: len(f), reverse=True)
         return list(map(get_point, self.all_frontiers))
 
-    def get_all_frontiers(self):
-        assert(self.algo is c.WAVEFRONT)    
-        self.wavefront_frontier()
-
-        return self.all_frontiers
-
+# get_frontier
+# find a frontier using the chosen algorithm for the simulation
+# and set self.frontier and self.path
+#
     def get_frontier(self):
         self.prev_path = self.path
         if self.algo is c.RANDOM_WALK:
