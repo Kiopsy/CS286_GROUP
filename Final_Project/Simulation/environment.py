@@ -9,8 +9,6 @@ import copy
 import time
 import math
 
-#from scipy.optimize import linear_sum_assignment
-
 class Env:
     def __init__(self, filename, frontier_algo, show_graphics):
         # list of robots
